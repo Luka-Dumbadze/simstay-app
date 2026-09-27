@@ -1,0 +1,463 @@
+{
+  "mode": "offline",
+  "workspace": {
+    "profileId": "ambassadori-classic",
+    "installed_apps": [
+      "ingest",
+      "pms",
+      "comms",
+      "phone",
+      "board",
+      "agents",
+      "ops",
+      "store"
+    ],
+    "skins": {
+      "pms": "classic",
+      "comms": "whatsapp"
+    }
+  },
+  "rules": [],
+  "ingest": null,
+  "published": false,
+  "shiftTitle_ka": "ცვლა ჯერ არ დაწყებულა — გამოაქვეყნეთ წესები",
+  "shiftTitle_en": "Shift not started: publish the rules",
+  "folio": {
+    "reservationId": "AK-2291",
+    "room": "304",
+    "roomLabel_ka": "ვილა 304 (კაჭრეთის კუნძული)",
+    "roomLabel_en": "Villa 304 (Kachreti Island)",
+    "guest": "ირაკლი კაპანაძე",
+    "guest_en": "Irakli Kapanadze",
+    "company": "საქართველოს ბანკი",
+    "company_en": "Bank of Georgia · Corporate Retreat",
+    "letterOnFile": true,
+    "windows": [
+      {
+        "n": 1,
+        "payee": "ირაკლი კაპანაძე",
+        "payerType": "guest",
+        "method": "card"
+      },
+      {
+        "n": 2,
+        "payee": "საქართველოს ბანკი",
+        "payerType": "company",
+        "method": "direct_bill"
+      },
+      {
+        "n": 3,
+        "payee": null,
+        "payerType": null,
+        "method": null
+      },
+      {
+        "n": 4,
+        "payee": null,
+        "payerType": null,
+        "method": null
+      }
+    ],
+    "charges": [
+      {
+        "id": "c-villa",
+        "code": "VILLA",
+        "label_ka": "ვილა სუიტი",
+        "label_en": "Villa Suite",
+        "amount": 450,
+        "window": null
+      },
+      {
+        "id": "c-golf",
+        "code": "GOLF",
+        "label_ka": "გოლფი, 18 ორმო",
+        "label_en": "18-Hole Golf Green Fee",
+        "amount": 180,
+        "window": null
+      },
+      {
+        "id": "c-wine",
+        "code": "WINE",
+        "label_ka": "საფერავი რეზერვი",
+        "label_en": "Saperavi Reserve Tasting",
+        "amount": 120,
+        "window": null
+      },
+      {
+        "id": "c-rest",
+        "code": "REST",
+        "label_ka": "რესტორანი „ქალაქი“",
+        "label_en": "Restaurant Qalaqi",
+        "amount": 240,
+        "window": null
+      }
+    ]
+  },
+  "checkedOut": false,
+  "rooms": [
+    {
+      "number": "101",
+      "type": "დელუქსი",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "102",
+      "type": "დელუქსი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "103",
+      "type": "სუპერიორი",
+      "status": "dirty",
+      "updatedAt": 0
+    },
+    {
+      "number": "104",
+      "type": "სუპერიორი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "105",
+      "type": "დელუქსი",
+      "status": "clean",
+      "updatedAt": 0
+    },
+    {
+      "number": "106",
+      "type": "ტყუპი",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "107",
+      "type": "ტყუპი",
+      "status": "ooo",
+      "updatedAt": 0
+    },
+    {
+      "number": "108",
+      "type": "დელუქსი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "109",
+      "type": "სუპერიორი",
+      "status": "oos",
+      "updatedAt": 0
+    },
+    {
+      "number": "110",
+      "type": "ლუქსი",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "201",
+      "type": "დელუქსი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "202",
+      "type": "სუპერიორი",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "203",
+      "type": "სუპერიორი",
+      "status": "dirty",
+      "updatedAt": 0
+    },
+    {
+      "number": "204",
+      "type": "ტყუპი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "205",
+      "type": "დელუქსი",
+      "status": "clean",
+      "updatedAt": 0
+    },
+    {
+      "number": "206",
+      "type": "ტყუპი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "207",
+      "type": "დელუქსი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "208",
+      "type": "სუპერიორი",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "209",
+      "type": "ლუქსი",
+      "status": "dirty",
+      "updatedAt": 0
+    },
+    {
+      "number": "210",
+      "type": "ლუქსი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "301",
+      "type": "ვილა · კაჭრეთის კუნძული",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "302",
+      "type": "ვილა · კაჭრეთის კუნძული",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "303",
+      "type": "ვილა · კაჭრეთის კუნძული",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "304",
+      "type": "ვილა · კაჭრეთის კუნძული",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "305",
+      "type": "ვილა · კაჭრეთის კუნძული",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "306",
+      "type": "ვილა · კაჭრეთის კუნძული",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "307",
+      "type": "ვილა · კაჭრეთის კუნძული",
+      "status": "dirty",
+      "updatedAt": 0
+    },
+    {
+      "number": "308",
+      "type": "ვილა · კაჭრეთის კუნძული",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "309",
+      "type": "ვილა · კაჭრეთის კუნძული",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "310",
+      "type": "ვილა · კაჭრეთის კუნძული",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "401",
+      "type": "ვილა · ტბის ნაპირი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "402",
+      "type": "ვილა · ტბის ნაპირი",
+      "status": "clean",
+      "updatedAt": 0
+    },
+    {
+      "number": "403",
+      "type": "ვილა · ტბის ნაპირი",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "404",
+      "type": "ვილა · ტბის ნაპირი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "405",
+      "type": "ვილა · ტბის ნაპირი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "406",
+      "type": "ვილა · ტბის ნაპირი",
+      "status": "dirty",
+      "updatedAt": 0
+    },
+    {
+      "number": "407",
+      "type": "ვილა · ტბის ნაპირი",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "408",
+      "type": "ვილა · ტბის ნაპირი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "409",
+      "type": "ვილა · ტბის ნაპირი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "410",
+      "type": "ვილა · ტბის ნაპირი",
+      "status": "inspected",
+      "updatedAt": 0
+    }
+  ],
+  "tasks": [
+    {
+      "id": "hk-103-0",
+      "room": "103",
+      "kind": "stayover",
+      "checklist": [
+        {
+          "id": "bed",
+          "label_ka": "საწოლი",
+          "label_en": "Bed",
+          "done": false
+        },
+        {
+          "id": "bath",
+          "label_ka": "სააბაზანო",
+          "label_en": "Bathroom",
+          "done": false
+        },
+        {
+          "id": "minibar",
+          "label_ka": "მინიბარი შევსებულია",
+          "label_en": "Minibar restocked",
+          "done": false
+        },
+        {
+          "id": "amenities",
+          "label_ka": "აქსესუარები",
+          "label_en": "Amenities",
+          "done": false
+        },
+        {
+          "id": "floor",
+          "label_ka": "ტერასა და იატაკი",
+          "label_en": "Terrace & floor",
+          "done": false
+        }
+      ],
+      "photo": null,
+      "state": "open",
+      "createdAt": 0
+    },
+    {
+      "id": "hk-203-0",
+      "room": "203",
+      "kind": "stayover",
+      "checklist": [
+        {
+          "id": "bed",
+          "label_ka": "საწოლი",
+          "label_en": "Bed",
+          "done": false
+        },
+        {
+          "id": "bath",
+          "label_ka": "სააბაზანო",
+          "label_en": "Bathroom",
+          "done": false
+        },
+        {
+          "id": "minibar",
+          "label_ka": "მინიბარი შევსებულია",
+          "label_en": "Minibar restocked",
+          "done": false
+        },
+        {
+          "id": "amenities",
+          "label_ka": "აქსესუარები",
+          "label_en": "Amenities",
+          "done": false
+        },
+        {
+          "id": "floor",
+          "label_ka": "ტერასა და იატაკი",
+          "label_en": "Terrace & floor",
+          "done": false
+        }
+      ],
+      "photo": null,
+      "state": "open",
+      "createdAt": 0
+    }
+  ],
+  "chat": [],
+  "quickReplies": [
+    {
+      "id": "letter",
+      "text_ka": "გთხოვთ, კომპანიის წერილი",
+      "text_en": "Please send the company letter",
+      "reply_ka": "რა თქმა უნდა — ბანკის ადმინისტრაციამ წერილი ახლავე გამოგიგზავნათ ელფოსტით.",
+      "reply_en": "Of course, the bank's administration has just emailed you the letter.",
+      "effect": "letter"
+    },
+    {
+      "id": "personal",
+      "text_ka": "ღვინის დეგუსტაცია და რესტორანი თქვენს პირად ბარათზე ჩაიწერება",
+      "text_en": "Wine tasting and restaurant will go on your personal card",
+      "reply_ka": "კი, საფერავი და ვახშამი ჩემით გადავიხდი. მადლობა.",
+      "reply_en": "Yes, I'll pay for the Saperavi and dinner myself. Thank you."
+    },
+    {
+      "id": "yes",
+      "text_ka": "დიახ, ყველაფერი მოწესრიგებულია",
+      "text_en": "Yes, everything is settled",
+      "reply_ka": "დიდი მადლობა! კაჭრეთში ყოფნა საუცხოო იყო.",
+      "reply_en": "Thank you very much! Our stay in Kachreti was wonderful."
+    }
+  ],
+  "usedReplies": [],
+  "gateLog": [],
+  "adapterLog": [
+    {
+      "t": 0,
+      "line": "adapter: Mews-shaped (dry-run) · 40 resources synced → 200 (mock)"
+    }
+  ],
+  "metrics": {
+    "errorsCaught": 0,
+    "interventionsAvoided": 0,
+    "movesGraded": 0,
+    "checkoutAt": null,
+    "cleanedAt": null,
+    "readyAt": null
+  },
+  "version": 0
+}

@@ -1,0 +1,33 @@
+{
+  "default": "ambassadori-classic",
+  "profiles": [
+    {
+      "id": "ambassadori-classic",
+      "name": "Ambassadori Kachreti · Classic desk",
+      "description": "Resort & villas, legacy-PMS (Opera-style) four-window split folio, WhatsApp-style guest channel",
+      "installed_apps": ["ingest", "pms", "comms", "phone", "board", "agents", "ops", "store"],
+      "skins": { "pms": "classic", "comms": "whatsapp" }
+    },
+    {
+      "id": "ambassadori-modern",
+      "name": "Ambassadori Kachreti · Modern cloud PMS",
+      "description": "Cloud-PMS (Cloudbeds-style) folio cards, Telegram-style guest channel",
+      "installed_apps": ["ingest", "pms", "comms", "phone", "board", "agents", "ops", "store"],
+      "skins": { "pms": "modern", "comms": "telegram" }
+    },
+    {
+      "id": "training-desk",
+      "name": "Training desk only",
+      "description": "Rule Studio, folio simulator, guest chat and the AI team for classroom onboarding",
+      "installed_apps": ["ingest", "pms", "comms", "agents", "store"],
+      "skins": { "pms": "classic", "comms": "whatsapp" }
+    },
+    {
+      "id": "housekeeping-ops",
+      "name": "Housekeeping & villas operations",
+      "description": "Live board, housekeeping phone and hand-offs, no front-desk apps",
+      "installed_apps": ["phone", "board", "ops", "store"],
+      "skins": { "pms": "modern", "comms": "telegram" }
+    }
+  ]
+}

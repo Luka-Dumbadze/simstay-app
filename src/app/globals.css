@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --os-bg: 11 12 14; /* #0B0C0E */
+  --os-panel: 18 19 22; /* #121316 */
+  --os-card: 24 25 30; /* #18191E */
+  --os-hover: 30 32 38; /* #1E2026 */
+  --os-edge: 34 36 42; /* #22242A */
+  --os-ink: 236 237 240;
+  --os-mute: 139 143 153;
+}
+
+/* Projector theme: lifts surfaces and borders so they survive a washed-out beamer. */
+:root[data-theme="projector"] {
+  --os-bg: 22 24 29;
+  --os-panel: 30 32 38;
+  --os-card: 38 41 48;
+  --os-hover: 46 49 57;
+  --os-edge: 70 74 84;
+  --os-ink: 250 250 252;
+  --os-mute: 176 180 190;
+}
+
+html,
+body {
+  height: 100%;
+  background: rgb(var(--os-bg));
+  color: rgb(var(--os-ink));
+}
+
+body {
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.os-wallpaper {
+  background:
+    radial-gradient(900px 500px at 50% -10%, rgba(59, 130, 246, 0.07), transparent 70%),
+    rgb(var(--os-bg));
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.stripe-ooo {
+  background-image: repeating-linear-gradient(135deg, #111827 0 6px, #374151 6px 12px);
+}
+
+.chat-wa {
+  background-color: #efeae2;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.045) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+.chat-tg {
+  background: linear-gradient(160deg, #c9dcb4 0%, #9fc5a8 40%, #86b5c9 100%);
+}
