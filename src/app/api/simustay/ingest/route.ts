@@ -1,4 +1,3 @@
-import rulesFixture from "@/lib/simustay/fixtures/rules.alazani.json";
 import { extractRules } from "@/lib/simustay/ai-gateway";
 import { safe } from "@/lib/simustay/safe";
 import { getStore } from "@/lib/simustay/store";
@@ -9,7 +8,7 @@ const MAX_BYTES = 15 * 1024 * 1024;
 
 export const POST = safe(async (req) => {
   let file = Buffer.alloc(0);
-  let fileName = rulesFixture.document.fileName;
+  let fileName = getStore().state.property.docFileName;
   let mime = "application/pdf";
   if ((req.headers.get("content-type") ?? "").includes("multipart/form-data")) {
     const form = await req.formData();

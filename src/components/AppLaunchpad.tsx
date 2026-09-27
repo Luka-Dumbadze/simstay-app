@@ -5,6 +5,8 @@ import { APP_ORDER, APPS } from "./appRegistry";
 import type { AppId, SimuState } from "@/lib/simustay/types";
 
 // Full-screen app grid: eight modular enterprise apps with live status lines.
+// A card launches exactly one app: the workspace then shows that window alone (`onOpen` is a solo launch).
+// Only the "Live workspace" button opens the four-window demo layout.
 export default function AppLaunchpad(props: {
   state: SimuState;
   left: number;
@@ -24,10 +26,10 @@ export default function AppLaunchpad(props: {
       <div className="mx-auto max-w-[1440px]">
         <div className="mb-8 flex flex-wrap items-end gap-4">
           <div>
-            <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-[#C8A96A]">Ambassadori Kachreti Island &amp; Golf Resort</div>
+            <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-[#C8A96A]">{state.property.name}</div>
             <h1 className="mt-1 text-[32px] font-semibold tracking-tight text-os-ink">Launchpad</h1>
             <p className="mt-1 text-[15px] text-os-mute">
-              {state.folio.roomLabel_en} · {state.folio.guest_en} · {state.folio.company_en}
+              {state.folio.roomLabel_en} · {state.folio.guest_en} · {state.folio.company_en} · {state.rooms.length} units
             </p>
           </div>
           <div className="ml-auto flex items-center gap-3">
@@ -72,7 +74,7 @@ export default function AppLaunchpad(props: {
                 </div>
                 <h3 className="mt-6 text-[18px] font-semibold text-os-ink">{app.name}</h3>
                 <div className="text-[13px] text-os-mute">{app.name_ka}</div>
-                <p className="mt-2 line-clamp-2 text-[14px] leading-snug text-os-mute">{app.blurb}</p>
+                <p className="mt-2 line-clamp-2 text-[14px] leading-snug text-os-mute">{app.blurb(state)}</p>
                 <div className="mt-auto flex items-center gap-2 pt-5 text-[12px] text-os-ink/80">
                   <span className="h-2 w-2 rounded-full" style={{ background: on ? app.badge : "#52525B" }} />
                   <span className="truncate">{on ? app.stat(state) : "not installed · open App Store"}</span>

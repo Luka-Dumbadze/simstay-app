@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import { CheckCircle2, FileText, Loader2, Send, Upload } from "lucide-react";
-import rulesFixture from "@/lib/simustay/fixtures/rules.alazani.json";
 import { act, toast, upload } from "@/lib/simustay/client";
 import type { Rule, SimuState, Tier } from "@/lib/simustay/types";
 
@@ -19,7 +18,7 @@ export default function IngestWindow({ state }: { state: SimuState }) {
   const [publishing, setPublishing] = useState(false);
 
   const ingest = async (file: File | null) => {
-    setBusy(file?.name ?? rulesFixture.document.fileName);
+    setBusy(file?.name ?? state.property.docFileName);
     const form = new FormData();
     if (file) form.append("file", file);
     const out = await upload("ingest", form);
@@ -34,8 +33,9 @@ export default function IngestWindow({ state }: { state: SimuState }) {
     if (out.ok) toast(out.note ?? "გამოქვეყნდა · Published", "ok");
   };
 
-  const graded = state.rules.filter((r) => r.tier !== "D").length;
-  const coached = state.rules.length - graded;
+  // Graded = rules the engine checks; a P rule without a machine check is shown but not graded.
+  const graded = state.rules.filter((r) => r.tier !== "D" && r.check).length;
+  const coached = state.rules.filter((r) => r.tier === "D").length;
 
   return (
     <div className="flex h-full flex-col bg-os-panel text-[15px]">
@@ -58,10 +58,10 @@ export default function IngestWindow({ state }: { state: SimuState }) {
         {busy ? <Loader2 className="h-7 w-7 shrink-0 animate-spin text-violet-300" /> : <Upload className="h-7 w-7 shrink-0 text-slate-400" />}
         <div className="min-w-0 flex-1">
           <div className="font-medium text-slate-100">
-            {busy ? `ვკითხულობ ${state.ingest?.pages ?? 2} გვერდს… · Reading` : "ჩააგდეთ SOP / შიდა წესები (PDF)"}
+            {busy ? `ვკითხულობ ${state.ingest?.pages ?? 2} გვერდს… · Reading` : "გადმოიტანეთ SOP ან შიდა წესები (PDF)"}
           </div>
           <div className="truncate text-[13px] text-slate-400">
-            {busy ?? state.ingest?.fileName ?? `Drop SOPs · ${rulesFixture.document.fileName} · ka/en`}
+            {busy ?? state.ingest?.fileName ?? `Drop SOPs · ${state.property.docFileName} · ka/en`}
             {state.ingest && !busy && ` · ${state.ingest.pages} გვ. · ${state.ingest.source === "live" ? "live AI" : "offline cache"}`}
           </div>
         </div>
@@ -135,7 +135,7 @@ function RuleCard({ rule, index }: { rule: Rule; index: number }) {
             <span className="line-clamp-1 group-hover:line-clamp-none">«{rule.source.quote}»</span>
           </div>
           {rule.tier === "D" && (
-            <div className="mt-1 text-[12px] text-slate-400">💬 მხოლოდ რჩევა, არასდროს ჩაიჭრება · coached, never failed</div>
+            <div className="mt-1 text-[12px] text-slate-400">💬 მხოლოდ რჩევა — შეცდომად არასდროს ჩაითვლება · coached, never failed</div>
           )}
         </div>
       </div>

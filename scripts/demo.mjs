@@ -37,17 +37,23 @@ const sources = Math.max(
 const stale = !existsSync(buildId) || statSync(buildId).mtimeMs < sources;
 
 if (args.has("--force") || stale) {
-  console.log(`▸ SimuStay: production build (${existsSync(buildId) ? "sources changed" : "first run"})…`);
+  console.log(`▸ SimStay: production build (${existsSync(buildId) ? "sources changed" : "first run"})…`);
   const r = spawnSync(process.execPath, [nextBin, "build"], { cwd: root, env, stdio: "inherit" });
   if (r.status !== 0) process.exit(r.status ?? 1);
 }
 if (args.has("--build-only")) process.exit(0);
 
 const lan = Object.values(networkInterfaces()).flat().find((n) => n && n.family === "IPv4" && !n.internal)?.address;
-console.log(`▸ SimuStay demo  · OFFLINE_DEMO=${env.OFFLINE_DEMO}`);
+console.log(`▸ SimStay demo  · OFFLINE_DEMO=${env.OFFLINE_DEMO}`);
 console.log(`  desktop  http://localhost:3000`);
 console.log(`  phone    http://${lan ?? "<laptop-ip>"}:3000/m/hk`);
 console.log(`  hotkeys  Ctrl+Shift+R reset · B before check-out · O online/offline · A autopilot · 1/2 layout`);
 const child = spawn(process.execPath, [nextBin, "start", "-p", "3000", "-H", "0.0.0.0"], { cwd: root, env, stdio: "inherit" });
-for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => child.kill(sig));
+// Forward the signal; if the server has not exited within 3 s (e.g. held open by a long-lived stream), force it.
+for (const sig of ["SIGINT", "SIGTERM"]) {
+  process.on(sig, () => {
+    child.kill(sig);
+    setTimeout(() => { if (child.exitCode === null) child.kill("SIGKILL"); }, 3000).unref();
+  });
+}
 child.on("exit", (code) => process.exit(code ?? 0));

@@ -4,7 +4,7 @@ import "@fontsource-variable/noto-sans-georgian";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SimuStay OS · Ambassadori Kachreti",
+  title: "SimStay OS",
   description: "The AI-native frontline operating system for hospitality",
 };
 

@@ -43,16 +43,9 @@ export function parsePmsCsv(csv: string): { room: string; status: RoomStatus }[]
   const rows: { room: string; status: RoomStatus }[] = [];
   for (const raw of csv.split(/\r?\n/)) {
     const [room, status] = raw.split(/[;,\t]/).map((x) => x?.trim());
-    if (!room || !status || !/^\d{3,4}$/.test(room)) continue;
+    if (!room || !status || !/^\d{1,4}$/.test(room)) continue;
     const mapped = CSV_STATUS[status.toLowerCase().replace(/[\s_-]/g, "")];
     if (mapped) rows.push({ room, status: mapped });
   }
   return rows;
 }
-
-export const SAMPLE_PMS_EXPORT = `room,status
-105,inspected
-209,clean
-307,clean
-406,inspected
-`;

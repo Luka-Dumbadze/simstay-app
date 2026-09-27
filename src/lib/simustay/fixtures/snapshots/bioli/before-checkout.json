@@ -1,0 +1,665 @@
+{
+  "mode": "offline",
+  "property": {
+    "id": "bioli",
+    "name": "Bioli Wellness Resort (Kojori)",
+    "name_ka": "ბიოლი — ველნეს კურორტი (კოჯორი)",
+    "short": "Bioli Wellness",
+    "location": "კოჯორი, თბილისიდან 15 კმ",
+    "rulebook_ka": "ბიოლის წესდება",
+    "units_ka": "17 კოტეჯი და შალე · ბიოლის ტყე",
+    "docFileName": "bioli_kojori_wellness_protocols.pdf",
+    "photoTags_ka": [
+      "ჰიპოალერგიული თეთრეული ✓",
+      "ევკალიპტის არომატიზატორი ✓",
+      "სამკურნალო მცენარეების ბალიში ✓"
+    ],
+    "persona": {
+      "summary_ka": "ელენა როსტოვა · Smart Detox პროგრამა (7 დღე)",
+      "summary_en": "Elena Rostova · Smart Detox Program (7 days)",
+      "demand_ka": "ფიქრობს, რომ ლაუნჯ-ბარის ორგანული ღვინო და დამატებითი ფიტოაბაზანაც პროგრამაში შედის",
+      "demand_en": "Assumes the lounge bar's organic wine and an extra phytobath are included in the program",
+      "languages": "en · ru · ka"
+    },
+    "preferenceMenu": {
+      "aroma": [
+        {
+          "id": "orange",
+          "label_ka": "ფორთოხალი",
+          "label_en": "Orange"
+        },
+        {
+          "id": "eucalyptus",
+          "label_ka": "ევკალიპტი",
+          "label_en": "Eucalyptus"
+        },
+        {
+          "id": "lavender",
+          "label_ka": "ლავანდა",
+          "label_en": "Lavender"
+        },
+        {
+          "id": "iris",
+          "label_ka": "ზამბახი",
+          "label_en": "Iris"
+        },
+        {
+          "id": "ylang_ylang",
+          "label_ka": "ილანგ-ილანგი",
+          "label_en": "Ylang-ylang"
+        },
+        {
+          "id": "pine",
+          "label_ka": "ფიჭვი",
+          "label_en": "Pine"
+        },
+        {
+          "id": "fir",
+          "label_ka": "სოჭი",
+          "label_en": "Fir"
+        }
+      ],
+      "pillow": [
+        {
+          "id": "sintepon",
+          "label_ka": "სინტეპონი",
+          "label_en": "Sintepon"
+        },
+        {
+          "id": "feather",
+          "label_ka": "ბუმბული",
+          "label_en": "Feather"
+        },
+        {
+          "id": "medicinal_plants",
+          "label_ka": "სამკურნალო მცენარეები",
+          "label_en": "Medicinal plants"
+        }
+      ],
+      "sheets": [
+        {
+          "id": "cotton",
+          "label_ka": "ბამბა",
+          "label_en": "Cotton"
+        },
+        {
+          "id": "linen",
+          "label_ka": "სელი",
+          "label_en": "Linen"
+        }
+      ]
+    },
+    "guestCard": {
+      "aroma": "eucalyptus",
+      "pillow": "medicinal_plants",
+      "sheets": "linen"
+    },
+    "demoScript": [
+      {
+        "chargeId": "c-cottage",
+        "window": 2
+      },
+      {
+        "chargeId": "c-halo",
+        "window": 2
+      },
+      {
+        "chargeId": "c-spectro",
+        "window": 2
+      },
+      {
+        "chargeId": "c-bar",
+        "window": 2
+      },
+      {
+        "chargeId": "c-bar",
+        "window": 1
+      },
+      {
+        "chargeId": "c-phyto",
+        "window": 1
+      }
+    ],
+    "csvSample": "room,status\n3,inspected\n7,clean\n15,inspected\n"
+  },
+  "ui": {
+    "openWindows": {
+      "ingest": false,
+      "pms": false,
+      "comms": false,
+      "phone": false,
+      "board": false,
+      "agents": false,
+      "ops": false,
+      "store": false
+    },
+    "focusedWindow": null,
+    "rev": 0,
+    "writer": null,
+    "seqByClient": {}
+  },
+  "workspace": {
+    "profileId": "classic-desk",
+    "installed_apps": [
+      "ingest",
+      "pms",
+      "comms",
+      "phone",
+      "board",
+      "agents",
+      "ops",
+      "store"
+    ],
+    "skins": {
+      "pms": "classic",
+      "comms": "whatsapp"
+    }
+  },
+  "rules": [
+    {
+      "id": "H1",
+      "tier": "H",
+      "title_ka": "კოტეჯში განთავსება — წინასწარ გადახდილ ფანჯარაში (W2)",
+      "title_en": "The cottage stay posts to the prepaid window (W2)",
+      "source": {
+        "page": 1,
+        "quote": "წინასწარ გადახდილი განთავსება და პროგრამა ჩაიწერება წინასწარი გადახდის ფანჯარაში"
+      },
+      "check": {
+        "kind": "route",
+        "chargeCodes": [
+          "COTTAGE"
+        ],
+        "payer": "package"
+      }
+    },
+    {
+      "id": "H2",
+      "tier": "H",
+      "title_ka": "ალკოჰოლი და მინიბარი არ შედის დეტოქს-პაკეტში და რჩება სტუმრის პირად ანგარიშზე",
+      "title_en": "Alcohol and minibar are not part of the detox package and stay on the guest's personal account",
+      "source": {
+        "page": 1,
+        "quote": "ალკოჰოლი და მინიბარი არ შედის დეტოქს-პაკეტში და რჩება სტუმრის პირად ანგარიშზე"
+      },
+      "check": {
+        "kind": "route",
+        "chargeCodes": [
+          "BAR"
+        ],
+        "payer": "guest"
+      }
+    },
+    {
+      "id": "H3",
+      "tier": "H",
+      "title_ka": "განთავსებაში შემავალი სპექტრომეტრია და მარილის ოთახი — 0 ₾, წინასწარ გადახდილ ფანჯარაში",
+      "title_en": "Spectrometry and salt-room access included with the stay post at 0 GEL to the prepaid window",
+      "source": {
+        "page": 1,
+        "quote": "განთავსების ფასში შედის საუზმე, 15-წუთიანი ველნეს კონსულტაცია, სპექტრომეტრია და მარილის ოთახი"
+      },
+      "check": {
+        "kind": "route",
+        "chargeCodes": [
+          "HALO",
+          "SPECTRO"
+        ],
+        "payer": "package"
+      }
+    },
+    {
+      "id": "H4",
+      "tier": "H",
+      "title_ka": "პროგრამასა და განთავსებაში შეუსვლელი პროცედურა — სტუმრის პირად ანგარიშზე, ფასების ცხრილით",
+      "title_en": "Procedures outside the program and stay inclusions go to the guest's personal account at list price",
+      "source": {
+        "page": 2,
+        "quote": "პროგრამაში შეუსვლელ პროცედურებს სტუმარი იხდის ფასების ცხრილის მიხედვით"
+      },
+      "check": {
+        "kind": "route",
+        "chargeCodes": [
+          "PHYTO"
+        ],
+        "payer": "guest"
+      }
+    },
+    {
+      "id": "H5",
+      "tier": "H",
+      "title_ka": "ყოველ ფანჯარას სჭირდება გადამხდელი და გადახდის მეთოდი",
+      "title_en": "Every folio window needs a payee and a payment method",
+      "source": {
+        "page": 1,
+        "quote": "ფოლიოს ყოველ ფანჯარას უნდა ჰქონდეს გადამხდელი და გადახდის მეთოდი"
+      },
+      "check": {
+        "kind": "window_requires_payee"
+      }
+    },
+    {
+      "id": "P1",
+      "tier": "P",
+      "title_ka": "თერმული პროცედურა (ფიტოაბაზანა, ინფრაწითელი საუნა) — მხოლოდ სპეციალისტის ექსპრეს-კონსულტაციის შემდეგ",
+      "title_en": "Thermal procedures (phytobath, infrared sauna) only after an express consultation with a specialist",
+      "source": {
+        "page": 2,
+        "quote": "ექსპრეს-კონსულტაცია სპეციალისტთან უფასოა და ეხმარება უკუჩვენებების გამორიცხვაში"
+      }
+    },
+    {
+      "id": "P3",
+      "tier": "P",
+      "title_ka": "კოტეჯი იყიდება მხოლოდ ზედამხედველის შემოწმების შემდეგ",
+      "title_en": "A cottage is sellable only after supervisor inspection",
+      "source": {
+        "page": 2,
+        "quote": "კოტეჯი გაიყიდება მხოლოდ ზედამხედველის შემოწმების შემდეგ"
+      },
+      "check": {
+        "kind": "sell_requires",
+        "status": "inspected"
+      }
+    },
+    {
+      "id": "D1",
+      "tier": "D",
+      "title_ka": "პროგრამის ფარგლებში პროცედურის ჩანაცვლება — ველნეს ექსპერტის შეხედულებით",
+      "title_en": "Substituting a procedure within the program is at the wellness expert's discretion",
+      "source": {
+        "page": 2,
+        "quote": "ველნეს ექსპერტის შეხედულებით"
+      }
+    }
+  ],
+  "ingest": {
+    "fileName": "bioli_kojori_wellness_protocols.pdf",
+    "pages": 2,
+    "source": "cache",
+    "at": 0
+  },
+  "published": true,
+  "shiftTitle_ka": "ცვლა: გასვლა · Grand Premium კოტეჯი 12 (ბიოლის ტყე) · სტაჟიორი: ნატა",
+  "shiftTitle_en": "Shift: Check-out · Grand Premium Cottage 12 (Bioli Forest) · Trainee: Nata",
+  "folio": {
+    "reservationId": "BW-0712",
+    "room": "12",
+    "roomLabel_ka": "Grand Premium კოტეჯი 12 (ბიოლის ტყე)",
+    "roomLabel_en": "Grand Premium Cottage 12 (Bioli Forest)",
+    "guest": "ელენა როსტოვა",
+    "guest_en": "Elena Rostova",
+    "company": "Smart Detox პროგრამა (7 დღე) · წინასწარ გადახდილი",
+    "company_en": "Smart Detox Program (7 days) · $2,400 ≈ 6,480 GEL at 2.7 · prepaid",
+    "letterOnFile": false,
+    "windows": [
+      {
+        "n": 1,
+        "payee": "ელენა როსტოვა",
+        "payerType": "guest",
+        "method": "card"
+      },
+      {
+        "n": 2,
+        "payee": "Smart Detox · წინასწარ გადახდილი",
+        "payerType": "package",
+        "method": "prepaid"
+      },
+      {
+        "n": 3,
+        "payee": null,
+        "payerType": null,
+        "method": null
+      },
+      {
+        "n": 4,
+        "payee": null,
+        "payerType": null,
+        "method": null
+      }
+    ],
+    "charges": [
+      {
+        "id": "c-cottage",
+        "code": "COTTAGE",
+        "label_ka": "Grand Premium კოტეჯი, განთავსება",
+        "label_en": "Grand Premium Cottage stay (demo rate; Bioli's rate not published)",
+        "amount": 1080,
+        "window": 2
+      },
+      {
+        "id": "c-halo",
+        "code": "HALO",
+        "label_ka": "მარილის ოთახი (ჰალოთერაპია) · განთავსებაში შედის",
+        "label_en": "Salt room (halotherapy) · included with stay (list 73 GEL)",
+        "amount": 0,
+        "window": 2
+      },
+      {
+        "id": "c-spectro",
+        "code": "SPECTRO",
+        "label_ka": "სპექტრომეტრია (მიკროელემენტები, მძიმე მეტალები) · განთავსებაში შედის",
+        "label_en": "Spectrometry (micronutrients & heavy metals) · included with stay",
+        "amount": 0,
+        "window": 2
+      },
+      {
+        "id": "c-phyto",
+        "code": "PHYTO",
+        "label_ka": "ფიტოაბაზანა · პროგრამის გარეთ",
+        "label_en": "Phytobath · outside Smart Detox inclusions (list 145 GEL)",
+        "amount": 145,
+        "window": 1
+      },
+      {
+        "id": "c-bar",
+        "code": "BAR",
+        "label_ka": "ორგანული ღვინო, ლაუნჯ-ბარი",
+        "label_en": "Organic wine, lounge bar (demo amount; POS price not published)",
+        "amount": 250,
+        "window": 1
+      }
+    ]
+  },
+  "checkedOut": false,
+  "rooms": [
+    {
+      "number": "1",
+      "type": "Premium კოტეჯი",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "2",
+      "type": "Premium კოტეჯი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "3",
+      "type": "Premium კოტეჯი",
+      "status": "dirty",
+      "updatedAt": 0
+    },
+    {
+      "number": "4",
+      "type": "Premium კოტეჯი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "5",
+      "type": "Premium კოტეჯი",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "6",
+      "type": "Premium კოტეჯი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "7",
+      "type": "Premium კოტეჯი",
+      "status": "dirty",
+      "updatedAt": 0
+    },
+    {
+      "number": "8",
+      "type": "Premium კოტეჯი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "9",
+      "type": "Grand Premium კოტეჯი",
+      "status": "clean",
+      "updatedAt": 0
+    },
+    {
+      "number": "10",
+      "type": "Grand Premium კოტეჯი",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "11",
+      "type": "Grand Premium კოტეჯი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "12",
+      "type": "Grand Premium კოტეჯი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "13",
+      "type": "Grand Premium კოტეჯი",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "14",
+      "type": "Grand შალე",
+      "status": "inspected",
+      "updatedAt": 0
+    },
+    {
+      "number": "15",
+      "type": "Grand შალე",
+      "status": "dirty",
+      "updatedAt": 0
+    },
+    {
+      "number": "16",
+      "type": "შალე",
+      "status": "occupied",
+      "updatedAt": 0
+    },
+    {
+      "number": "17",
+      "type": "შალე",
+      "status": "inspected",
+      "updatedAt": 0
+    }
+  ],
+  "tasks": [
+    {
+      "id": "hk-3-0",
+      "room": "3",
+      "kind": "stayover",
+      "checklist": [
+        {
+          "id": "bed",
+          "label_ka": "ჰიპოალერგიული თეთრეული",
+          "label_en": "Hypoallergenic linen",
+          "done": false
+        },
+        {
+          "id": "bath",
+          "label_ka": "სააბაზანო",
+          "label_en": "Bathroom",
+          "done": false
+        },
+        {
+          "id": "minibar",
+          "label_ka": "მინიბარი შევსებულია",
+          "label_en": "Minibar restocked",
+          "done": false
+        },
+        {
+          "id": "amenities",
+          "label_ka": "არომატი და ბალიში სტუმრის ბარათით",
+          "label_en": "Aroma & pillow per guest card",
+          "done": false
+        },
+        {
+          "id": "floor",
+          "label_ka": "ტერასა და იატაკი",
+          "label_en": "Terrace & floor",
+          "done": false
+        }
+      ],
+      "photo": null,
+      "state": "open",
+      "createdAt": 0
+    },
+    {
+      "id": "hk-7-0",
+      "room": "7",
+      "kind": "stayover",
+      "checklist": [
+        {
+          "id": "bed",
+          "label_ka": "ჰიპოალერგიული თეთრეული",
+          "label_en": "Hypoallergenic linen",
+          "done": false
+        },
+        {
+          "id": "bath",
+          "label_ka": "სააბაზანო",
+          "label_en": "Bathroom",
+          "done": false
+        },
+        {
+          "id": "minibar",
+          "label_ka": "მინიბარი შევსებულია",
+          "label_en": "Minibar restocked",
+          "done": false
+        },
+        {
+          "id": "amenities",
+          "label_ka": "არომატი და ბალიში სტუმრის ბარათით",
+          "label_en": "Aroma & pillow per guest card",
+          "done": false
+        },
+        {
+          "id": "floor",
+          "label_ka": "ტერასა და იატაკი",
+          "label_en": "Terrace & floor",
+          "done": false
+        }
+      ],
+      "photo": null,
+      "state": "open",
+      "createdAt": 0
+    }
+  ],
+  "chat": [
+    {
+      "id": "m1",
+      "from": "guest",
+      "text_ka": "გამარჯობა, ელენა როსტოვა ვარ, კოტეჯი 12-დან. Smart Detox პროგრამა მაქვს, 7 დღე — ღვინო და გუშინდელი ფიტოაბაზანაც შედის, ხომ?",
+      "text_en": "Hello, I'm Elena Rostova from cottage 12. I'm on the 7-day Smart Detox program, so the wine and yesterday's phytobath are included, right?",
+      "t": 0
+    }
+  ],
+  "quickReplies": [
+    {
+      "id": "inclusions",
+      "text_ka": "განთავსებაში შედის სპექტრომეტრია და მარილის ოთახი",
+      "text_en": "Spectrometry and the salt room are included with your stay",
+      "reply_ka": "მშვენიერია, მარილის ოთახი ძალიან მომეწონა.",
+      "reply_en": "Wonderful, I really enjoyed the salt room."
+    },
+    {
+      "id": "personal",
+      "text_ka": "ღვინო და დამატებითი ფიტოაბაზანა პროგრამაში არ შედის — პირად ბარათზე ჩაიწერება",
+      "text_en": "The wine and the extra phytobath aren't in the program; they go on your personal card",
+      "reply_ka": "აა, გასაგებია. კარგი, ბარათით გადავიხდი.",
+      "reply_en": "Ah, I see. Fine, I'll pay by card."
+    },
+    {
+      "id": "yes",
+      "text_ka": "დიახ, ყველაფერი მოწესრიგებულია",
+      "text_en": "Yes, everything is settled",
+      "reply_ka": "დიდი მადლობა! ტყეში ისე დავისვენე, როგორც დიდი ხანია არა.",
+      "reply_en": "Thank you so much! I haven't rested like this in the forest for a long time."
+    }
+  ],
+  "usedReplies": [],
+  "gateLog": [
+    {
+      "ok": true,
+      "ruleId": "OK",
+      "tier": "H",
+      "message_ka": "სწორია",
+      "message_en": "Correct",
+      "chargeId": "c-cottage",
+      "target": 2,
+      "at": 0
+    },
+    {
+      "ok": true,
+      "ruleId": "OK",
+      "tier": "H",
+      "message_ka": "სწორია",
+      "message_en": "Correct",
+      "chargeId": "c-halo",
+      "target": 2,
+      "at": 0
+    },
+    {
+      "ok": true,
+      "ruleId": "OK",
+      "tier": "H",
+      "message_ka": "სწორია",
+      "message_en": "Correct",
+      "chargeId": "c-spectro",
+      "target": 2,
+      "at": 0
+    },
+    {
+      "ok": false,
+      "ruleId": "H2",
+      "tier": "H",
+      "message_ka": "ალკოჰოლი და მინიბარი არ შედის დეტოქს-პაკეტში და რჩება სტუმრის პირად ანგარიშზე",
+      "message_en": "Alcohol and minibar are not part of the detox package and stay on the guest's personal account",
+      "source": {
+        "page": 1,
+        "quote": "ალკოჰოლი და მინიბარი არ შედის დეტოქს-პაკეტში და რჩება სტუმრის პირად ანგარიშზე"
+      },
+      "chargeId": "c-bar",
+      "target": 2,
+      "at": 0
+    },
+    {
+      "ok": true,
+      "ruleId": "OK",
+      "tier": "H",
+      "message_ka": "სწორია",
+      "message_en": "Correct",
+      "chargeId": "c-bar",
+      "target": 1,
+      "at": 0
+    },
+    {
+      "ok": true,
+      "ruleId": "OK",
+      "tier": "H",
+      "message_ka": "სწორია",
+      "message_en": "Correct",
+      "chargeId": "c-phyto",
+      "target": 1,
+      "at": 0
+    }
+  ],
+  "adapterLog": [
+    {
+      "t": 0,
+      "line": "adapter: Mews-shaped (dry-run) · 17 resources synced → 200 (mock)"
+    }
+  ],
+  "metrics": {
+    "errorsCaught": 1,
+    "interventionsAvoided": 1,
+    "movesGraded": 6,
+    "checkoutAt": null,
+    "cleanedAt": null,
+    "readyAt": null
+  },
+  "version": 0
+}

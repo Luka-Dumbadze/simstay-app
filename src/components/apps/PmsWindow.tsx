@@ -70,7 +70,8 @@ export default function PmsWindow({ state }: { state: SimuState }) {
 function ReservationHeader({ ctx }: { ctx: Ctx }) {
   const { folio } = ctx.state;
   const classic = ctx.skin === "classic";
-  const letter = (
+  // The company-letter chip (P1) only matters where a direct-bill window exists.
+  const letter = !folio.windows.some((w) => w.method === "direct_bill") ? null : (
     <button
       onClick={() => !ctx.locked && void act("folio/letter")}
       title="P1: direct bill requires a company letter (click to toggle for the second-run variant)"
@@ -91,7 +92,7 @@ function ReservationHeader({ ctx }: { ctx: Ctx }) {
           <span>GUEST <b className="font-sans">{folio.guest}</b> ({folio.guest_en})</span>
           <span>CO <b className="font-sans">{folio.company_en}</b></span>
           <span className={ctx.state.checkedOut ? "text-amber-300" : "text-emerald-300"}>{ctx.state.checkedOut ? "CHECKED OUT" : "IN HOUSE"}</span>
-          <span className="ml-auto rounded bg-white/90 px-0.5">{letter}</span>
+          {letter && <span className="ml-auto rounded bg-white/90 px-0.5">{letter}</span>}
         </div>
       </div>
     );
@@ -159,9 +160,9 @@ function ClassicWindow({ ctx, win }: { ctx: Ctx; win: FolioWindow }) {
       onDrop={(e) => { e.preventDefault(); setOver(false); const id = e.dataTransfer.getData("text/charge"); if (id) ctx.move(id, win.n); }}
       className={`flex min-h-[112px] flex-col border ${over ? "border-sky-600 bg-sky-50" : "border-slate-500 bg-white"}`}
     >
-      <div className={`flex items-center px-2 py-0.5 text-[12px] font-bold ${win.payerType === "company" ? "bg-[#2F5D8A] text-white" : win.payerType === "guest" ? "bg-[#5B6B7C] text-white" : "bg-[#B8C0C9] text-slate-700"}`}>
+      <div className={`flex items-center px-2 py-0.5 text-[12px] font-bold ${win.payerType === "company" || win.payerType === "package" ? "bg-[#2F5D8A] text-white" : win.payerType === "guest" ? "bg-[#5B6B7C] text-white" : "bg-[#B8C0C9] text-slate-700"}`}>
         W{win.n} · {win.payee ?? "—"}
-        <span className="ml-auto font-normal">{win.method === "direct_bill" ? "Direct bill" : win.method === "card" ? "Card" : "no payee"}</span>
+        <span className="ml-auto font-normal">{win.method === "direct_bill" ? "Direct bill" : win.method === "prepaid" ? "Package · prepaid" : win.method === "card" ? "Card" : "no payee"}</span>
       </div>
       <div className="flex-1 space-y-0.5 p-1.5 text-[14px]">
         {charges.map((c) => (
@@ -221,7 +222,7 @@ function ModernWindow({ ctx, win }: { ctx: Ctx; win: FolioWindow }) {
   const [over, setOver] = useState(false);
   const charges = ctx.state.folio.charges.filter((c) => c.window === win.n);
   const total = charges.reduce((a, c) => a + c.amount, 0);
-  const tone = win.payerType === "company" ? "from-sky-500 to-indigo-500" : win.payerType === "guest" ? "from-emerald-500 to-teal-500" : "from-slate-300 to-slate-300";
+  const tone = win.payerType === "company" ? "from-sky-500 to-indigo-500" : win.payerType === "package" ? "from-lime-500 to-emerald-600" : win.payerType === "guest" ? "from-emerald-500 to-teal-500" : "from-slate-300 to-slate-300";
   return (
     <div
       data-testid={`window-${win.n}`}
@@ -234,7 +235,7 @@ function ModernWindow({ ctx, win }: { ctx: Ctx; win: FolioWindow }) {
       <div className="flex items-baseline gap-2 px-3 pt-2">
         <span className="text-[12px] font-semibold text-slate-400">ფანჯარა {win.n}</span>
         <span className="truncate font-semibold">{win.payee ?? "—"}</span>
-        <span className="ml-auto text-[11px] text-slate-500">{win.method === "direct_bill" ? "პირდაპირი ანგარიშსწორება" : win.method === "card" ? "ბარათი" : "გადამხდელი არ არის"}</span>
+        <span className="ml-auto text-[11px] text-slate-500">{win.method === "direct_bill" ? "პირდაპირი ანგარიშსწორება" : win.method === "prepaid" ? "პაკეტი · წინასწარ გადახდილი" : win.method === "card" ? "ბარათი" : "გადამხდელი არ არის"}</span>
       </div>
       <div className="min-h-[60px] space-y-1 px-3 py-2">
         {charges.map((c) => (
@@ -244,7 +245,7 @@ function ModernWindow({ ctx, win }: { ctx: Ctx; win: FolioWindow }) {
             {!ctx.locked && <button onClick={() => ctx.move(c.id, null)} className="text-slate-400 hover:text-slate-700" title="Unassign"><Undo2 className="h-3.5 w-3.5" /></button>}
           </div>
         ))}
-        {charges.length === 0 && <div className="pt-3 text-center text-[12px] text-slate-400">ჩააგდეთ ხარჯი აქ</div>}
+        {charges.length === 0 && <div className="pt-3 text-center text-[12px] text-slate-400">გადმოიტანეთ ხარჯი აქ</div>}
       </div>
       <div className="border-t border-slate-100 px-3 py-1.5 text-right text-[13px] text-slate-600">სულ <b className="font-mono">{money(total)}</b></div>
     </div>
@@ -304,10 +305,10 @@ function GraderHud({ state, last, classic }: { state: SimuState; last: GateEvent
         <div key={last.at} className="animate-slide-up flex items-start gap-3 rounded-lg bg-red-600/95 px-3 py-2 text-white shadow-lg">
           <AlertTriangle className="mt-0.5 h-6 w-6 shrink-0" />
           <div className="min-w-0">
-            <div className="text-[16px] font-bold">✗ {last.ruleId}: {last.message_ka}{last.source ? ` (ამბასადორის წესდება, გვ. ${last.source.page})` : ""}</div>
+            <div className="text-[16px] font-bold">✗ {last.ruleId}: {last.message_ka}{last.source ? ` (${state.property.rulebook_ka}, გვ. ${last.source.page})` : ""}</div>
             <div className="text-[13px] text-red-100">{last.message_en}. {chargeLabel ? `«${chargeLabel}» → W${last.target} დაბლოკილია; ხარჯი დაბრუნდა.` : "Posting blocked."}</div>
             {last.source && (
-              <div className="mt-1 text-[13px] text-red-50">წყარო: ამბასადორის წესდება, გვ. {last.source.page} · «{last.source.quote}»</div>
+              <div className="mt-1 text-[13px] text-red-50">წყარო: {state.property.rulebook_ka}, გვ. {last.source.page} · «{last.source.quote}»</div>
             )}
           </div>
         </div>

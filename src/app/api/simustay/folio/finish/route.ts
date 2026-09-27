@@ -1,6 +1,6 @@
-import scenario from "@/lib/simustay/fixtures/scenario.checkin-204.json";
 import { gateFinish } from "@/lib/simustay/grader";
 import { pms } from "@/lib/simustay/pms";
+import { PROPERTIES } from "@/lib/simustay/properties";
 import { safe } from "@/lib/simustay/safe";
 import { getStore, pushLog, uid } from "@/lib/simustay/store";
 export const runtime = "nodejs";
@@ -35,7 +35,7 @@ export const POST = safe(async () => {
       id: uid(`hk-${roomNo}`),
       room: roomNo,
       kind: "departure",
-      checklist: scenario.hkChecklist.map((i) => ({ ...i, done: false })),
+      checklist: PROPERTIES[s.property.id].scenario.hkChecklist.map((i) => ({ ...i, done: false })),
       photo: null,
       state: "open",
       createdAt: now,

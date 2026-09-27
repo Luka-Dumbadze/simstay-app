@@ -1,4 +1,4 @@
-import { parsePmsCsv, SAMPLE_PMS_EXPORT } from "@/lib/simustay/pms";
+import { parsePmsCsv } from "@/lib/simustay/pms";
 import { body, safe } from "@/lib/simustay/safe";
 import { getStore, pushLog } from "@/lib/simustay/store";
 export const runtime = "nodejs";
@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export const POST = safe(async (req) => {
   const { csv } = await body<{ csv: string }>(req);
-  const rows = parsePmsCsv(typeof csv === "string" && csv.trim() ? csv : SAMPLE_PMS_EXPORT);
+  const rows = parsePmsCsv(typeof csv === "string" && csv.trim() ? csv : getStore().state.property.csvSample);
   if (rows.length === 0) throw new Error("CSV-ში სწორი სტრიქონი ვერ მოიძებნა · No valid room,status rows");
   let applied = 0;
   const state = getStore().commit((s) => {
@@ -20,5 +20,5 @@ export const POST = safe(async (req) => {
     }
     pushLog(s, `IMPORT pms_export.csv · ${applied}/${rows.length} rows applied (CsvExportAdapter)`);
   });
-  return { state, note: `CSV: ${applied} ოთახი განახლდა` };
+  return { state, note: `CSV: ${applied} ერთეული განახლდა` };
 });

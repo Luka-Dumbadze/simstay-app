@@ -1,0 +1,179 @@
+{
+  "id": "checkin-villa-304",
+  "property": {
+    "id": "ambassadori",
+    "name": "Ambassadori Kachreti Island & Golf Resort",
+    "name_ka": "ამბასადორი კაჭრეთი — კუნძულისა და გოლფის კურორტი",
+    "short": "Ambassadori Kachreti",
+    "location": "კაჭრეთი, კახეთი",
+    "rulebook_ka": "ამბასადორის წესდება",
+    "units_ka": "101–210 — ოთახები · 301–410 — ვილები",
+    "docFileName": "ambassadori_kachreti_sops.pdf",
+    "photoTags_ka": [
+      "საწოლი გასწორებულია ✓",
+      "ხალათი ადგილზეა ✓",
+      "ღვინო მარჯვნივ ✓"
+    ],
+    "persona": {
+      "summary_ka": "ირაკლი კაპანაძე · საქართველოს ბანკის კორპორატიული რიტრიტი",
+      "summary_en": "Irakli Kapanadze · Bank of Georgia corporate retreat",
+      "demand_ka": "ვილა და გოლფი ბანკის ანგარიშზე; ღვინო და ვახშამი — პირად ბარათზე",
+      "demand_en": "Villa and golf on the bank's account; wine and dinner on his personal card",
+      "languages": "ka · en"
+    },
+    "demoScript": [
+      {
+        "chargeId": "c-villa",
+        "window": 2
+      },
+      {
+        "chargeId": "c-golf",
+        "window": 2
+      },
+      {
+        "chargeId": "c-wine",
+        "window": 2
+      },
+      {
+        "chargeId": "c-wine",
+        "window": 1
+      },
+      {
+        "chargeId": "c-rest",
+        "window": 1
+      }
+    ],
+    "csvSample": "room,status\n105,inspected\n209,clean\n307,clean\n406,inspected\n"
+  },
+  "shiftTitle_ka": "ცვლა: გასვლა · ვილა 304 (კაჭრეთის კუნძული) · სტაჟიორი: ანა",
+  "shiftTitle_en": "Shift: Check-out · Villa 304 (Kachreti Island) · Trainee: Ana",
+  "folio": {
+    "reservationId": "AK-2291",
+    "room": "304",
+    "roomLabel_ka": "ვილა 304 (კაჭრეთის კუნძული)",
+    "roomLabel_en": "Villa 304 (Kachreti Island)",
+    "guest": "ირაკლი კაპანაძე",
+    "guest_en": "Irakli Kapanadze",
+    "company": "საქართველოს ბანკი",
+    "company_en": "Bank of Georgia · Corporate Retreat",
+    "letterOnFile": true,
+    "windows": [
+      {
+        "n": 1,
+        "payee": "ირაკლი კაპანაძე",
+        "payerType": "guest",
+        "method": "card"
+      },
+      {
+        "n": 2,
+        "payee": "საქართველოს ბანკი",
+        "payerType": "company",
+        "method": "direct_bill"
+      },
+      {
+        "n": 3,
+        "payee": null,
+        "payerType": null,
+        "method": null
+      },
+      {
+        "n": 4,
+        "payee": null,
+        "payerType": null,
+        "method": null
+      }
+    ],
+    "charges": [
+      {
+        "id": "c-villa",
+        "code": "VILLA",
+        "label_ka": "ვილა სუიტი",
+        "label_en": "Villa Suite",
+        "amount": 450,
+        "window": null
+      },
+      {
+        "id": "c-golf",
+        "code": "GOLF",
+        "label_ka": "გოლფის მოედნის საფასური",
+        "label_en": "18-Hole Golf Green Fee",
+        "amount": 180,
+        "window": null
+      },
+      {
+        "id": "c-wine",
+        "code": "WINE",
+        "label_ka": "საფერავი რეზერვი",
+        "label_en": "Saperavi Reserve Tasting",
+        "amount": 120,
+        "window": null
+      },
+      {
+        "id": "c-rest",
+        "code": "REST",
+        "label_ka": "რესტორანი „ქალაქი“",
+        "label_en": "Restaurant Qalaqi",
+        "amount": 240,
+        "window": null
+      }
+    ]
+  },
+  "opening": [
+    {
+      "from": "guest",
+      "text_ka": "გამარჯობა, ირაკლი კაპანაძე ვარ, საქართველოს ბანკის კორპორატიული რიტრიტიდან. ვილისა და გოლფის საფასურს ბანკი იხდის.",
+      "text_en": "Hello, I'm Irakli Kapanadze from the Bank of Georgia corporate retreat. The bank pays for the villa and golf."
+    }
+  ],
+  "quickReplies": [
+    {
+      "id": "letter",
+      "text_ka": "გთხოვთ, კომპანიის წერილი",
+      "text_en": "Please send the company letter",
+      "reply_ka": "რა თქმა უნდა — ბანკის ადმინისტრაციამ წერილი ახლავე გამოგიგზავნათ ელფოსტით.",
+      "reply_en": "Of course, the bank's administration has just emailed you the letter.",
+      "effect": "letter"
+    },
+    {
+      "id": "personal",
+      "text_ka": "ღვინის დეგუსტაცია და რესტორანი თქვენს პირად ბარათზე ჩაიწერება",
+      "text_en": "Wine tasting and restaurant will go on your personal card",
+      "reply_ka": "კი, საფერავისა და ვახშმის საფასურს თავად გადავიხდი. მადლობა.",
+      "reply_en": "Yes, I'll pay for the Saperavi and dinner myself. Thank you."
+    },
+    {
+      "id": "yes",
+      "text_ka": "დიახ, ყველაფერი მოწესრიგებულია",
+      "text_en": "Yes, everything is settled",
+      "reply_ka": "დიდი მადლობა! კაჭრეთში ყოფნა საუცხოო იყო.",
+      "reply_en": "Thank you very much! Our stay in Kachreti was wonderful."
+    }
+  ],
+  "hkChecklist": [
+    {
+      "id": "bed",
+      "label_ka": "საწოლი",
+      "label_en": "Bed"
+    },
+    {
+      "id": "bath",
+      "label_ka": "სააბაზანო",
+      "label_en": "Bathroom"
+    },
+    {
+      "id": "minibar",
+      "label_ka": "მინიბარი შევსებულია",
+      "label_en": "Minibar restocked"
+    },
+    {
+      "id": "amenities",
+      "label_ka": "ჰიგიენური საშუალებები",
+      "label_en": "Amenities"
+    },
+    {
+      "id": "floor",
+      "label_ka": "ტერასა და იატაკი",
+      "label_en": "Terrace & floor"
+    }
+  ]
+}

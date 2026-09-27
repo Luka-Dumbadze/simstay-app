@@ -1,14 +1,14 @@
 {
-  "name": "simustay-app",
+  "name": "simstay-app",
   "version": "0.1.0",
   "private": true,
-  "description": "SimuStay: the AI-native frontline operating system for hospitality (GITA SmartStay 3.0 prototype)",
+  "description": "SimStay: the AI-native frontline operating system for hospitality (GITA SmartStay 3.0 prototype)",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/lib/simustay/grader.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/simustay/grader.test.ts src/lib/simustay/windows.test.ts",
     "demo": "node scripts/demo.mjs",
     "demo:build": "node scripts/demo.mjs --build-only --force",
     "demo:fixtures": "node scripts/gen-fixtures.mjs",

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { CheckCheck, MoreVertical, Paperclip, Phone, Search, SendHorizontal, Smile } from "lucide-react";
-import { act } from "@/lib/simustay/client";
+import { act, useChatLang, type ChatLang } from "@/lib/simustay/client";
 import type { ChatMessage, CommsSkin, SimuState } from "@/lib/simustay/types";
 
 interface Theme {
@@ -54,6 +54,7 @@ export default function CommsWindow({ state }: { state: SimuState }) {
   const skin = state.workspace.skins.comms;
   const th = THEMES[skin];
   const scroller = useRef<HTMLDivElement>(null);
+  const lang = useChatLang();
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
@@ -81,7 +82,7 @@ export default function CommsWindow({ state }: { state: SimuState }) {
             სტუმარი გამოჩნდება წესების გამოქვეყნების შემდეგ
           </div>
         )}
-        {state.chat.map((m) => <Bubble key={m.id} m={m} th={th} />)}
+        {state.chat.map((m) => <Bubble key={m.id} m={m} th={th} lang={lang} />)}
       </div>
 
       {state.published && available.length > 0 && (
@@ -113,17 +114,18 @@ export default function CommsWindow({ state }: { state: SimuState }) {
   );
 }
 
-function Bubble({ m, th }: { m: ChatMessage; th: Theme }) {
+function Bubble({ m, th, lang }: { m: ChatMessage; th: Theme; lang: ChatLang }) {
+  const [main, sub] = lang === "ka" ? [m.text_ka, m.text_en] : [m.text_en, m.text_ka];
   if (m.from === "system") {
-    return <div className={`mx-auto w-fit max-w-[90%] animate-slide-up rounded-md px-2.5 py-1 text-center text-[12px] ${th.system}`}>{m.text_ka}</div>;
+    return <div className={`mx-auto w-fit max-w-[90%] animate-slide-up rounded-md px-2.5 py-1 text-center text-[12px] ${th.system}`}>{main}</div>;
   }
   const out = m.from === "agent";
   return (
     <div className={`flex animate-slide-up ${out ? "justify-end" : "justify-start"}`}>
       <div className={`max-w-[82%] px-2.5 py-1.5 shadow-sm ${out ? th.outBubble : th.inBubble}`}>
-        <div className="text-[15px] leading-snug">{m.text_ka}</div>
+        <div className="text-[15px] leading-snug">{main}</div>
         <div className="mt-0.5 flex items-center justify-end gap-1 text-[11px] text-black/45">
-          <span className="mr-auto pr-3 italic">{m.text_en}</span>
+          <span className="mr-auto pr-3 italic">{sub}</span>
           <span suppressHydrationWarning>{hhmm(m.t)}</span>
           {out && <CheckCheck className={`h-3.5 w-3.5 ${th.outMeta}`} />}
         </div>

@@ -63,6 +63,44 @@ try {
   const bad = await post("hk/inspect", { room: "999" });
   check(bad.ok === false && typeof bad.error === "string", "failing route returns 200 {ok:false}");
   check((await post("reset")).ok, "reset to start.json");
+
+  // Bioli Wellness: property switch swaps rules, board and persona; the alcohol trap fires H2.
+  const sw = await post("property", { propertyId: "bioli" });
+  check(sw.ok && sw.state.property.id === "bioli" && sw.state.rooms.length === 17, "switch → Bioli (17 cottages)");
+  const bioliPdf = readFileSync(join(root, "src/lib/simustay/fixtures/docs/bioli_kojori_wellness_protocols.pdf"));
+  const bioliSha = /^SIMUSTAY_DEMO_PDF_SHA_BIOLI=(.*)$/m.exec(readFileSync(join(root, ".env.demo"), "utf8"))?.[1];
+  check(createHash("sha256").update(bioliPdf).digest("hex") === bioliSha, "Bioli PDF sha matches .env.demo");
+  const bform = new FormData();
+  bform.append("file", new Blob([bioliPdf], { type: "application/pdf" }), "bioli_kojori_wellness_protocols.pdf");
+  const bing = await (await fetch(`${BASE}/api/simustay/ingest`, { method: "POST", body: bform })).json();
+  check(bing.ok && bing.state.rules.length === 8, "Bioli ingest → 8 rules");
+  await post("publish");
+  const trap = await post("folio/move", { chargeId: "c-bar", window: 2 });
+  check(trap.gate?.ruleId === "H2", "alcohol → package blocked by H2");
+  for (const m of bing.state.property.demoScript) await post("folio/move", m);
+  const bfin = await post("folio/finish");
+  check(bfin.gate?.ok && bfin.state.rooms.find((r) => r.number === "12").status === "dirty", "Bioli finish → cottage 12 dirty");
+  const back = await post("property", { propertyId: "ambassadori" });
+  check(back.ok && back.state.property.id === "ambassadori" && back.state.rooms.length === 40, "switch back → Ambassadori");
+
+  const savedWindows = (await (await fetch(`${BASE}/api/simustay/state`)).json()).ui.openWindows;
+  const win = await post("windows", { action: "preset" });
+  const open = Object.entries(win.state.ui.openWindows).filter(([, v]) => v).map(([k]) => k).sort().join(",");
+  check(open === "board,ingest,phone,pms", "Live workspace preset opens the quartet", open);
+  const closed = await post("windows", { action: "close", id: "board" });
+  const stillClosed = (await post("reset")).state.ui.openWindows.board === false;
+  check(closed.ok && stillClosed, "closed window stays closed across reset");
+  const cid = `preflight-${Date.now()}`;
+  await post("windows", { action: "close", id: "comms", clientId: cid, seq: 2 });
+  const late = await post("windows", { action: "open", id: "comms", clientId: cid, seq: 1 });
+  check(late.stale === true && late.state.ui.openWindows.comms === false, "late (older) window request cannot undo a newer close");
+  const foc = await post("windows", { action: "focus", id: "comms", clientId: cid, seq: 3 });
+  check(foc.ok && foc.state.ui.openWindows.comms === false, "focus never reopens a closed window");
+  await post("windows", { action: "preset", clientId: cid, seq: 4 });
+  const solo = await post("windows", { action: "solo", id: "pms", clientId: cid, seq: 5 });
+  const soloOpen = Object.entries(solo.state.ui.openWindows).filter(([, v]) => v).map(([k]) => k).join(",");
+  check(soloOpen === "pms", "Launchpad card (solo) after Live workspace shows only that app", soloOpen);
+  for (const [id, isOpen] of Object.entries(savedWindows)) await post("windows", { action: isOpen ? "open" : "close", id });
 } catch (e) {
   check(false, "server reachable", String(e));
 }

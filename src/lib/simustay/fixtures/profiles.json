@@ -1,33 +1,74 @@
 {
-  "default": "ambassadori-classic",
+  "default": "classic-desk",
   "profiles": [
     {
-      "id": "ambassadori-classic",
-      "name": "Ambassadori Kachreti · Classic desk",
-      "description": "Resort & villas, legacy-PMS (Opera-style) four-window split folio, WhatsApp-style guest channel",
-      "installed_apps": ["ingest", "pms", "comms", "phone", "board", "agents", "ops", "store"],
-      "skins": { "pms": "classic", "comms": "whatsapp" }
+      "id": "classic-desk",
+      "name": "Classic desk",
+      "description": "legacy-PMS (Opera-style) four-window split folio, WhatsApp-style guest channel",
+      "installed_apps": [
+        "ingest",
+        "pms",
+        "comms",
+        "phone",
+        "board",
+        "agents",
+        "ops",
+        "store"
+      ],
+      "skins": {
+        "pms": "classic",
+        "comms": "whatsapp"
+      }
     },
     {
-      "id": "ambassadori-modern",
-      "name": "Ambassadori Kachreti · Modern cloud PMS",
+      "id": "modern-cloud",
+      "name": "Modern cloud PMS",
       "description": "Cloud-PMS (Cloudbeds-style) folio cards, Telegram-style guest channel",
-      "installed_apps": ["ingest", "pms", "comms", "phone", "board", "agents", "ops", "store"],
-      "skins": { "pms": "modern", "comms": "telegram" }
+      "installed_apps": [
+        "ingest",
+        "pms",
+        "comms",
+        "phone",
+        "board",
+        "agents",
+        "ops",
+        "store"
+      ],
+      "skins": {
+        "pms": "modern",
+        "comms": "telegram"
+      }
     },
     {
       "id": "training-desk",
       "name": "Training desk only",
       "description": "Rule Studio, folio simulator, guest chat and the AI team for classroom onboarding",
-      "installed_apps": ["ingest", "pms", "comms", "agents", "store"],
-      "skins": { "pms": "classic", "comms": "whatsapp" }
+      "installed_apps": [
+        "ingest",
+        "pms",
+        "comms",
+        "agents",
+        "store"
+      ],
+      "skins": {
+        "pms": "classic",
+        "comms": "whatsapp"
+      }
     },
     {
       "id": "housekeeping-ops",
       "name": "Housekeeping & villas operations",
       "description": "Live board, housekeeping phone and hand-offs, no front-desk apps",
-      "installed_apps": ["phone", "board", "ops", "store"],
-      "skins": { "pms": "modern", "comms": "telegram" }
+      "installed_apps": [
+        "phone",
+        "board",
+        "ops",
+        "store"
+      ],
+      "skins": {
+        "pms": "modern",
+        "comms": "telegram"
+      }
     }
   ]
 }

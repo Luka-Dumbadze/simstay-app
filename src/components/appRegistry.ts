@@ -1,4 +1,4 @@
-// Single source of truth for the eight SimuStay apps: launchpad cards, docks and windows all read it.
+// Single source of truth for the eight SimStay apps: launchpad cards, docks and windows all read it.
 import {
   Blocks, BotMessageSquare, ConciergeBell, FileSearch, LayoutGrid, MessageCircle, Smartphone, Workflow, type LucideIcon,
 } from "lucide-react";
@@ -9,7 +9,7 @@ export interface AppMeta {
   id: AppId;
   name: string;
   name_ka: string;
-  blurb: string;
+  blurb: (s: SimuState) => string;
   icon: LucideIcon;
   badge: string; // badge background
   glyph: string; // icon colour on the badge
@@ -26,12 +26,12 @@ export const APPS: Record<AppId, AppMeta> = {
     id: "ingest",
     name: "Rule Studio",
     name_ka: "წესების სტუდია",
-    blurb: "PDF ingest of Ambassadori Kachreti SOPs into graded H / P / D rules with verbatim sources.",
+    blurb: (s) => `PDF ingest of ${s.property.short} SOPs into graded H / P / D rules with verbatim sources.`,
     icon: FileSearch,
     badge: "#F59E0B",
     glyph: "#1A1203",
     min: { w: 360, h: 300 },
-    title: () => "Rule Studio · Ambassadori Kachreti SOPs",
+    title: (s) => `Rule Studio · ${s.property.short}`,
     stat: (s) => (s.rules.length ? `${s.rules.length} rules · ${s.published ? "published v1" : "draft"}` : "no document ingested"),
     tags: ["PDF", "Gemini / offline cache"],
   },
@@ -39,7 +39,7 @@ export const APPS: Record<AppId, AppMeta> = {
     id: "pms",
     name: "PMS Simulator",
     name_ka: "ფოლიო და ანგარიშსწორება",
-    blurb: "Front-desk folio and billing routing with a deterministic error gate before posting.",
+    blurb: () => "Front-desk folio and billing routing with a deterministic error gate before posting.",
     icon: ConciergeBell,
     badge: "#3B82F6",
     glyph: "#FFFFFF",
@@ -55,7 +55,7 @@ export const APPS: Record<AppId, AppMeta> = {
     id: "comms",
     name: "Comms Hub",
     name_ka: "სტუმართან მიმოწერა",
-    blurb: "WhatsApp- or Telegram-style guest chat with button-first quick replies in Georgian.",
+    blurb: () => "WhatsApp- or Telegram-style guest chat with button-first quick replies in Georgian.",
     icon: MessageCircle,
     badge: "#F4F4F5",
     glyph: "#18191E",
@@ -66,9 +66,9 @@ export const APPS: Record<AppId, AppMeta> = {
   },
   phone: {
     id: "phone",
-    name: "Housekeeping & Villas",
+    name: "Housekeeping",
     name_ka: "დიასახლისობა",
-    blurb: "Mobile inspection view: five big taps, one photo, supervisor sign-off.",
+    blurb: () => "Mobile inspection view: five big taps, one photo with AI check tags, supervisor sign-off.",
     icon: Smartphone,
     badge: "#EF4444",
     glyph: "#FFFFFF",
@@ -81,12 +81,12 @@ export const APPS: Record<AppId, AppMeta> = {
     id: "board",
     name: "Live PMS Board",
     name_ka: "ოთახების დაფა",
-    blurb: "Ambassadori resort rooms and island villas, live status grid with the adapter log and impact HUD.",
+    blurb: (s) => `${s.property.short}: ${s.rooms.length} units, live status grid with the adapter log and impact HUD.`,
     icon: LayoutGrid,
     badge: "#22C55E",
     glyph: "#04210F",
     min: { w: 420, h: 360 },
-    title: () => "Live PMS Board · Ambassadori Kachreti (Mock PMS)",
+    title: (s) => `Live PMS Board · ${s.property.short} (Mock PMS)`,
     stat: (s) => `${s.rooms.length} units · ${s.rooms.filter((r) => r.status === "inspected").length} sellable · ${s.rooms.filter((r) => r.status === "dirty").length} dirty`,
     tags: ["Mews-shaped", "Impact HUD"],
   },
@@ -94,7 +94,7 @@ export const APPS: Record<AppId, AppMeta> = {
     id: "agents",
     name: "AI Team",
     name_ka: "AI გუნდი",
-    blurb: "Synthetic guest, rule extractor, grader and dispatcher: status and last action of every agent.",
+    blurb: () => "Synthetic guest, rule extractor, grader and dispatcher: status and last action of every agent.",
     icon: BotMessageSquare,
     badge: "#EC4899",
     glyph: "#FFFFFF",
@@ -107,7 +107,7 @@ export const APPS: Record<AppId, AppMeta> = {
     id: "ops",
     name: "Operations",
     name_ka: "ოპერაციები",
-    blurb: "Task management and hand-offs from front desk to housekeeping to supervisor.",
+    blurb: () => "Task management and hand-offs from front desk to housekeeping to supervisor.",
     icon: Workflow,
     badge: "#8B5CF6",
     glyph: "#FFFFFF",
@@ -120,7 +120,7 @@ export const APPS: Record<AppId, AppMeta> = {
     id: "store",
     name: "App Store",
     name_ka: "აპები და ინტეგრაციები",
-    blurb: "Modular integrations (Mews, Cloudbeds, OtelMS), installed apps, skins and workspace profiles.",
+    blurb: () => "Modular integrations (Mews, Cloudbeds, OtelMS), installed apps, skins and workspace profiles.",
     icon: Blocks,
     badge: "#2563EB",
     glyph: "#FFFFFF",
@@ -164,8 +164,8 @@ export function agentRoster(s: SimuState): Agent[] {
       id: "guest",
       name: "Synthetic Guest",
       role_ka: `სინთეზური სტუმარი · ${s.folio.guest}`,
-      initials: "ირ",
-      gradient: "linear-gradient(135deg,#34D399,#0EA5E9)",
+      initials: s.folio.guest.split(/\s+/).map((p) => p[0]).join("").slice(0, 2),
+      gradient: s.property.id === "bioli" ? "linear-gradient(135deg,#86EFAC,#15803D)" : "linear-gradient(135deg,#34D399,#0EA5E9)",
       presence: s.published && !s.checkedOut ? "live" : "idle",
       engine: "Scripted beats (deterministic) · LLM paraphrase online only",
       status: s.published ? (s.checkedOut ? "checked out" : "in conversation") : "waiting for published rules",

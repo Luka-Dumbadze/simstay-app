@@ -2,15 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Bell, Bot, LayoutDashboard, LayoutGrid, Loader2, Minus, Moon, PanelLeft, PanelLeftClose, Projector, RotateCcw,
-  ShieldAlert, SkipForward, Sparkles, Wifi, WifiOff, X, type LucideIcon,
+  Bell, Bot, Building2, Check, ChevronDown, LayoutDashboard, LayoutGrid, Loader2, Minus, MonitorPlay, Moon, PanelLeft,
+  PanelLeftClose, Projector, RotateCcw, ShieldAlert, SkipForward, Sparkles, Wifi, WifiOff, X, type LucideIcon,
 } from "lucide-react";
 import { act, clock, DEMO_PHOTO, sharedHotkeys, toast, upload, useNow, usePresenterHotkeys, useSimuStream, useToasts } from "@/lib/simustay/client";
-import type { AppId, SimuState } from "@/lib/simustay/types";
+import { PROPERTIES, PROPERTY_IDS } from "@/lib/simustay/properties";
+import type { AppId, PropertyId, SimuState } from "@/lib/simustay/types";
+import { applyWindowAction, type WindowAction } from "@/lib/simustay/windows";
 import { APP_ORDER, APPS } from "./appRegistry";
 import AppLaunchpad from "./AppLaunchpad";
 import BottomDock from "./BottomDock";
 import SidebarDock from "./SidebarDock";
+import AgentInspectorDrawer, { type AgentId } from "./inspectors/AgentInspectorDrawer";
 import IngestWindow from "./apps/IngestWindow";
 import PmsWindow from "./apps/PmsWindow";
 import CommsWindow from "./apps/CommsWindow";
@@ -21,7 +24,18 @@ import OpsWindow from "./apps/OpsWindow";
 import StoreWindow from "./apps/StoreWindow";
 
 interface Rect { x: number; y: number; w: number; h: number }
-interface Win extends Rect { open: boolean; z: number }
+// Geometry and stacking are per-viewer only.
+interface Win extends Rect { z: number }
+// Which windows are open, and which has focus. This browser's copy is authoritative for its own actions;
+// the server copy persists it and carries other operators' changes.
+interface WindowSet { open: Record<AppId, boolean>; focused: AppId | null }
+
+function newClientId(): string {
+  // crypto.randomUUID needs a secure context; the phone reaches the laptop over plain http on the LAN.
+  return typeof crypto !== "undefined" && "randomUUID" in crypto && window.isSecureContext
+    ? crypto.randomUUID()
+    : `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
 type Preset = "wide" | "compact";
 type View = "launchpad" | "workspace";
 type Theme = "midnight" | "projector";
@@ -30,7 +44,6 @@ const TOP = 64; // below the top nav
 const DOCK = 100; // above the floating bottom dock
 const GAP = 12;
 const SIDEBAR = 96; // floating pill (16 + 64) + gutter
-const DEMO_APPS: AppId[] = ["ingest", "pms", "comms", "board", "phone"];
 
 function computeLayout(preset: Preset, vw: number, vh: number, left: number): Record<AppId, Rect> {
   const ah = vh - TOP - DOCK;
@@ -42,7 +55,7 @@ function computeLayout(preset: Preset, vw: number, vh: number, left: number): Re
   const x2 = x1 + c1 + GAP;
   const x3 = x2 + c2 + GAP;
   const c3 = Math.max(340, vw - x3 - GAP);
-  const ingestH = Math.round(ah * (preset === "wide" ? 0.5 : 0.46));
+  const commsH = Math.round(ah * 0.55);
   const phoneH = Math.min(700, Math.round(ah * (preset === "wide" ? 0.7 : 0.76)));
   const phoneW = Math.round((phoneH - 32) * 0.5) + 12;
   const center = (w: number, h: number, k: number): Rect => ({
@@ -52,8 +65,8 @@ function computeLayout(preset: Preset, vw: number, vh: number, left: number): Re
     h: Math.min(h, ah),
   });
   return {
-    ingest: { x: x1, y: TOP, w: c1, h: ingestH },
-    comms: { x: x1, y: TOP + ingestH + GAP, w: c1, h: ah - ingestH - GAP },
+    ingest: { x: x1, y: TOP, w: c1, h: ah },
+    comms: { x: x1, y: TOP + ah - commsH, w: c1, h: commsH },
     pms: { x: x2, y: TOP, w: c2, h: ah },
     board: { x: x3, y: TOP, w: c3, h: ah },
     phone: { x: vw - GAP - phoneW, y: TOP + ah - phoneH, w: phoneW, h: phoneH },
@@ -65,7 +78,7 @@ function computeLayout(preset: Preset, vw: number, vh: number, left: number): Re
 
 function initialWindows(preset: Preset, left: number): Record<AppId, Win> {
   const rects = computeLayout(preset, window.innerWidth, window.innerHeight, left);
-  return Object.fromEntries(APP_ORDER.map((id, i) => [id, { ...rects[id], open: DEMO_APPS.includes(id), z: i + 1 }])) as Record<AppId, Win>;
+  return Object.fromEntries(APP_ORDER.map((id, i) => [id, { ...rects[id], z: i + 1 }])) as Record<AppId, Win>;
 }
 
 export default function DesktopShell() {
@@ -75,7 +88,8 @@ export default function DesktopShell() {
   const [sidebar, setSidebar] = useState(true);
   const [theme, setTheme] = useState<Theme>("midnight");
   const [buzz, setBuzz] = useState(false);
-  const [menu, setMenu] = useState<"presenter" | "notifications" | null>(null);
+  const [menu, setMenu] = useState<"presenter" | "notifications" | "property" | null>(null);
+  const [inspector, setInspector] = useState<{ id: AgentId; top: number } | null>(null);
   const [autopilot, setAutopilot] = useState(false);
   const zTop = useRef(20);
   const presetRef = useRef<Preset>("wide");
@@ -84,6 +98,43 @@ export default function DesktopShell() {
   const seenTasks = useRef<Set<string> | null>(null);
   stateRef.current = state;
   const left = sidebar ? SIDEBAR : 16;
+
+  // ── Window set: local first, persisted in order, other operators' changes adopted ─────────────────
+  const [wm, setWm] = useState<WindowSet | null>(null);
+  const wmRef = useRef<WindowSet | null>(null);
+  wmRef.current = wm;
+  const clientId = useRef<string>("");
+  const seq = useRef(0);
+  const appliedRev = useRef(-1);
+  const bootRef = useRef<string | null>(null);
+
+  const persist = useCallback((payload: Record<string, unknown>) => {
+    seq.current += 1;
+    void act("windows", { ...payload, clientId: clientId.current, seq: seq.current });
+  }, []);
+
+  useEffect(() => {
+    if (!state) return;
+    const ui = state.ui;
+    if (!clientId.current) clientId.current = newClientId();
+    if (bootRef.current === null || wmRef.current === null) {
+      bootRef.current = state.bootId;
+      appliedRev.current = ui.rev;
+      setWm({ open: { ...ui.openWindows }, focused: ui.focusedWindow });
+      return;
+    }
+    if (state.bootId !== bootRef.current) {
+      // The server restarted with default window state: re-publish this presenter's desk instead of adopting it.
+      bootRef.current = state.bootId;
+      appliedRev.current = ui.rev;
+      persist({ action: "sync", openWindows: wmRef.current.open, focusedWindow: wmRef.current.focused });
+      return;
+    }
+    if (ui.rev > appliedRev.current) {
+      appliedRev.current = ui.rev;
+      if (ui.writer !== clientId.current) setWm({ open: { ...ui.openWindows }, focused: ui.focusedWindow });
+    }
+  }, [state, persist]);
 
   useEffect(() => {
     presetRef.current = window.innerWidth >= 1600 ? "wide" : "compact";
@@ -111,7 +162,7 @@ export default function DesktopShell() {
     setWins((w) => {
       if (!w) return w;
       const next = { ...w };
-      for (const id of APP_ORDER) next[id] = { ...next[id], ...rects[id], open: DEMO_APPS.includes(id) ? true : next[id].open };
+      for (const id of APP_ORDER) next[id] = { ...next[id], ...rects[id] };
       return next;
     });
     if (announce) toast(`განლაგება · Layout: ${preset === "wide" ? "1920×1080" : "1366×768"}`, "info");
@@ -123,25 +174,103 @@ export default function DesktopShell() {
     applyPreset(presetRef.current, next ? SIDEBAR : 16, false);
   };
 
-  const focus = useCallback((id: AppId) => {
-    setWins((w) => (w ? { ...w, [id]: { ...w[id], open: true, z: ++zTop.current } } : w));
+  const raise = useCallback((id: AppId) => {
+    zTop.current += 1;
+    const z = zTop.current;
+    setWins((w) => (w ? { ...w, [id]: { ...w[id], z } } : w));
   }, []);
 
+  // Every window change goes through the same pure state machine the server uses (lib/simustay/windows.ts):
+  // applied locally first so the UI never waits or flickers, then persisted in order.
+  const dispatch = useCallback((a: WindowAction) => {
+    const cur = wmRef.current;
+    if (!cur) return;
+    const next = applyWindowAction({ openWindows: cur.open, focusedWindow: cur.focused }, a);
+    const nextWm = { open: next.openWindows, focused: next.focusedWindow };
+    wmRef.current = nextWm;
+    setWm(nextWm);
+    persist(a as unknown as Record<string, unknown>);
+  }, [persist]);
+
+  // Pointer-down inside an open window: bring it forward; persist only when focus actually moves.
+  const focus = useCallback((id: AppId) => {
+    const cur = wmRef.current;
+    if (!cur?.open[id]) return;
+    raise(id);
+    if (cur.focused !== id) dispatch({ action: "focus", id });
+  }, [raise, dispatch]);
+
+  // Inside the workspace: add this one window (others untouched) and focus it.
   const openApp = useCallback((id: AppId) => {
+    const cur = wmRef.current;
+    if (!cur) return;
     setView("workspace");
-    focus(id);
+    raise(id);
+    if (!(cur.open[id] && cur.focused === id)) dispatch({ action: "open", id });
+  }, [raise, dispatch]);
+
+  // Launching from the Launchpad (card, dock, sidebar or inspector link): the workspace shows ONLY this app.
+  // Every other window closes; nothing is resurrected. The demo quartet comes only from "Live workspace"/autopilot.
+  const soloApp = useCallback((id: AppId) => {
+    setView("workspace");
+    raise(id);
+    dispatch({ action: "solo", id });
+  }, [raise, dispatch]);
+
+  // Any launcher: solo from the Launchpad, additive once the presenter is already working in the workspace.
+  const launchApp = useCallback((id: AppId) => {
+    if (view === "launchpad") soloApp(id);
+    else openApp(id);
+  }, [view, soloApp, openApp]);
+
+  // The X button: closed until someone deliberately opens it again.
+  const closeApp = useCallback((id: AppId) => {
+    if (wmRef.current?.open[id]) dispatch({ action: "close", id });
+  }, [dispatch]);
+
+  // Dock. From the Launchpad: solo launch. In the workspace, for that one app only:
+  // closed → open; open but behind → focus; open and focused → close (minimise).
+  const dockClick = useCallback((id: AppId) => {
+    const cur = wmRef.current;
+    if (!cur) return;
+    if (view === "launchpad") { soloApp(id); return; }
+    if (!cur.open[id]) { openApp(id); return; }
+    if (cur.focused !== id) { focus(id); return; }
+    closeApp(id);
+  }, [view, soloApp, openApp, focus, closeApp]);
+
+  // "Live workspace" (top nav, Launchpad button, empty-workspace button, autopilot): exactly the demo quartet.
+  const liveWorkspace = useCallback(() => {
+    setView("workspace");
+    applyPreset(presetRef.current, sidebar ? SIDEBAR : 16, false);
+    raise("pms");
+    dispatch({ action: "preset" });
+  }, [applyPreset, sidebar, raise, dispatch]);
+  const liveWorkspaceRef = useRef(liveWorkspace);
+  liveWorkspaceRef.current = liveWorkspace;
+
+  // Clicks inside the phone iframe never reach this document; the window blurs instead. Treat that as focusing the phone.
+  useEffect(() => {
+    const onBlur = () => {
+      setTimeout(() => {
+        const el = document.activeElement;
+        if (el instanceof HTMLIFrameElement && el.dataset.testid === "phone-frame") focus("phone");
+      }, 0);
+    };
+    window.addEventListener("blur", onBlur);
+    return () => window.removeEventListener("blur", onBlur);
   }, [focus]);
 
-  const toggleFromDock = useCallback((id: AppId) => {
-    if (view === "launchpad") { openApp(id); return; }
-    setWins((w) => {
-      if (!w) return w;
-      const cur = w[id];
-      const isTop = Object.values(w).every((o) => o.z <= cur.z);
-      if (cur.open && isTop) return { ...w, [id]: { ...cur, open: false } };
-      return { ...w, [id]: { ...cur, open: true, z: ++zTop.current } };
-    });
-  }, [view, openApp]);
+  const switchProperty = useCallback(async (id: PropertyId) => {
+    setMenu(null);
+    setInspector(null);
+    const out = await act("property", { propertyId: id });
+    if (out.ok) toast(`🏨 ${PROPERTIES[id].name}`, "ok");
+  }, []);
+
+  // Another operator's focus change brings that window to the front here too.
+  const focusedId = wm?.focused ?? null;
+  useEffect(() => { if (focusedId) raise(focusedId); }, [focusedId, raise]);
 
   // A new departure task makes the phone buzz and come to the front.
   useEffect(() => {
@@ -149,20 +278,20 @@ export default function DesktopShell() {
     const ids = new Set(state.tasks.filter((t) => t.kind === "departure" && t.state === "open").map((t) => t.id));
     if (seenTasks.current) {
       const fresh = [...ids].some((id) => !seenTasks.current!.has(id));
-      if (fresh && state.workspace.installed_apps.includes("phone")) {
-        focus("phone");
+      if (fresh && state.workspace.installed_apps.includes("phone") && wmRef.current?.open.phone) {
+        raise("phone");
         setBuzz(true);
         setTimeout(() => setBuzz(false), 700);
       }
     }
     seenTasks.current = ids;
-  }, [state, focus]);
+  }, [state, raise]);
 
   const runAutopilot = useCallback(async () => {
     if (autoRef.current) { autoRef.current = false; setAutopilot(false); toast("ავტოპილოტი გაჩერდა · Autopilot stopped"); return; }
     autoRef.current = true;
     setAutopilot(true);
-    setView("workspace");
+    liveWorkspaceRef.current();
     toast("▶ ავტოპილოტი · Autopilot: scripted beats, 1.2 s apart", "info");
     const wait = () => new Promise((r) => setTimeout(r, 1200));
     const task = () => stateRef.current?.tasks.find((t) => t.kind === "departure" && t.state === "open");
@@ -170,18 +299,14 @@ export default function DesktopShell() {
       () => act("reset", { snapshot: "start" }),
       () => upload("ingest", new FormData()),
       () => act("publish"),
-      () => act("folio/move", { chargeId: "c-villa", window: 2 }),
-      () => act("folio/move", { chargeId: "c-golf", window: 2 }),
-      () => act("folio/move", { chargeId: "c-wine", window: 2 }),
-      () => act("folio/move", { chargeId: "c-wine", window: 1 }),
-      () => act("folio/move", { chargeId: "c-rest", window: 1 }),
+      ...(stateRef.current?.property.demoScript ?? []).map((m) => () => act("folio/move", m)),
       () => act("folio/finish"),
       ...["bed", "bath", "minibar", "amenities", "floor"].map((itemId) => () => {
         const t = task();
         return t ? act("hk/check", { taskId: t.id, itemId, done: true }) : Promise.resolve();
       }),
       () => { const t = task(); return t ? act("hk/complete", { taskId: t.id, photo: DEMO_PHOTO }) : Promise.resolve(); },
-      () => act("hk/inspect", { room: stateRef.current?.folio.room ?? "304" }),
+      () => act("hk/inspect", { room: stateRef.current?.folio.room }),
     ];
     for (const step of steps) {
       if (!autoRef.current) return;
@@ -204,12 +329,12 @@ export default function DesktopShell() {
   });
 
   const installed = useMemo(() => (state ? APP_ORDER.filter((id) => state.workspace.installed_apps.includes(id)) : []), [state]);
-  const openIds = useMemo(() => new Set(wins ? APP_ORDER.filter((id) => wins[id].open) : []), [wins]);
+  const openIds = useMemo(() => new Set(wm ? APP_ORDER.filter((id) => wm.open[id]) : []), [wm]);
 
-  if (!state || !wins) {
+  if (!state || !wins || !wm) {
     return (
       <div className="os-wallpaper flex h-screen items-center justify-center gap-3 text-os-mute">
-        <Loader2 className="h-5 w-5 animate-spin" /> SimuStay OS იტვირთება…
+        <Loader2 className="h-5 w-5 animate-spin" /> SimStay OS იტვირთება…
       </div>
     );
   }
@@ -243,14 +368,27 @@ export default function DesktopShell() {
         autopilot={autopilot}
         onAutopilot={runAutopilot}
         onPreset={(p) => applyPreset(p, left)}
+        onLiveWorkspace={liveWorkspace}
+        onProperty={(id) => void switchProperty(id)}
       />
 
       {sidebar && (
         <SidebarDock
           state={state}
-          onAgents={() => openApp("agents")}
-          onSettings={() => openApp("store")}
+          activeAgent={inspector?.id ?? null}
+          onAgent={(id, top) => setInspector(inspector?.id === id ? null : { id, top })}
+          onSettings={() => launchApp("store")}
           onPresenter={() => setMenu(menu === "presenter" ? null : "presenter")}
+        />
+      )}
+
+      {sidebar && inspector && (
+        <AgentInspectorDrawer
+          agentId={inspector.id}
+          state={state}
+          anchorTop={inspector.top}
+          onClose={() => setInspector(null)}
+          onOpenApp={launchApp}
         />
       )}
 
@@ -258,16 +396,16 @@ export default function DesktopShell() {
         <AppLaunchpad
           state={state}
           left={left}
-          onOpen={openApp}
-          onStartDemo={() => { setView("workspace"); applyPreset(presetRef.current, left, false); }}
+          onOpen={soloApp}
+          onStartDemo={liveWorkspace}
           onAutopilot={() => void runAutopilot()}
           autopilot={autopilot}
         />
       )}
 
-      {/* Windows stay mounted in launchpad view so the phone iframe and scroll positions survive. */}
+      {/* Only open windows render; they stay mounted in launchpad view so the phone iframe survives. */}
       <div className={view === "workspace" ? "" : "hidden"}>
-        {installed.map((id) => (
+        {installed.filter((id) => openIds.has(id)).map((id) => (
           <WindowFrame
             key={id}
             id={id}
@@ -275,7 +413,7 @@ export default function DesktopShell() {
             title={APPS[id].title(state)}
             buzz={id === "phone" && buzz}
             onFocus={() => focus(id)}
-            onClose={() => setWins((w) => (w ? { ...w, [id]: { ...w[id], open: false } } : w))}
+            onClose={() => closeApp(id)}
             onRect={(r) => setWins((w) => (w ? { ...w, [id]: { ...w[id], ...r } } : w))}
           >
             {render(id)}
@@ -283,7 +421,20 @@ export default function DesktopShell() {
         ))}
       </div>
 
-      <BottomDock installed={installed} openIds={openIds} view={view} onLaunchpad={() => setView("launchpad")} onApp={toggleFromDock} />
+      {view === "workspace" && installed.every((id) => !openIds.has(id)) && (
+        <div data-testid="workspace-empty" className="absolute inset-0 grid place-items-center" style={{ paddingLeft: left }}>
+          <div className="max-w-sm rounded-3xl border border-white/5 bg-os-card p-8 text-center">
+            <LayoutGrid className="mx-auto h-8 w-8 text-os-mute" />
+            <div className="mt-3 text-[16px] font-semibold text-os-ink">ღია ფანჯარა არ არის</div>
+            <div className="mt-1 text-[13px] text-os-mute">Open an app from the dock or the launchpad, or start the demo layout.</div>
+            <button onClick={liveWorkspace} className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[13px] font-semibold text-[#0B0C0E]">
+              <MonitorPlay className="h-4 w-4" /> Live workspace
+            </button>
+          </div>
+        </div>
+      )}
+
+      <BottomDock installed={installed} openIds={openIds} focused={wm.focused} view={view} onLaunchpad={() => setView("launchpad")} onApp={dockClick} />
       <Toasts />
     </div>
   );
@@ -310,11 +461,13 @@ function TopNav(props: {
   setView: (v: View) => void;
   theme: Theme;
   onTheme: () => void;
-  menu: "presenter" | "notifications" | null;
-  setMenu: (m: "presenter" | "notifications" | null) => void;
+  menu: "presenter" | "notifications" | "property" | null;
+  setMenu: (m: "presenter" | "notifications" | "property" | null) => void;
   autopilot: boolean;
   onAutopilot: () => void;
   onPreset: (p: Preset) => void;
+  onLiveWorkspace: () => void;
+  onProperty: (id: PropertyId) => void;
 }) {
   const { state, menu, setMenu } = props;
   const now = useNow();
@@ -345,8 +498,55 @@ function TopNav(props: {
         ))}
       </div>
 
-      <div className="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 text-[14px] font-medium text-os-ink lg:block">
-        Ambassadori Kachreti Island &amp; Golf Resort <span className="px-1.5 text-os-mute">•</span> <span className="text-os-mute">SimuStay OS</span>
+      <button
+        onClick={props.onLiveWorkspace}
+        data-testid="live-workspace"
+        title="Demo layout: Rule Studio, folio, board, phone"
+        className="flex items-center gap-1.5 rounded-xl bg-white px-2.5 py-1 text-[12px] font-semibold text-[#0B0C0E] hover:bg-white/90"
+      >
+        <MonitorPlay className="h-3.5 w-3.5" /> Live workspace
+      </button>
+
+      <div className="absolute left-1/2 hidden -translate-x-1/2 lg:block">
+        <button
+          data-testid="property-switcher"
+          onClick={() => setMenu(menu === "property" ? null : "property")}
+          className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-[14px] font-medium text-os-ink hover:bg-white/5"
+        >
+          <Building2 className="h-4 w-4 text-[#C8A96A]" />
+          {state.property.name} <span className="text-os-mute">•</span> <span className="text-os-mute">SimStay OS</span>
+          <ChevronDown className="h-4 w-4 text-os-mute" />
+        </button>
+        {menu === "property" && (
+          <>
+            <div className="fixed inset-0 z-[9060]" onClick={() => setMenu(null)} />
+            <div className="absolute left-1/2 top-11 z-[9070] w-[420px] -translate-x-1/2 rounded-2xl border border-white/10 bg-os-card/95 p-1.5 shadow-2xl backdrop-blur-md">
+              <div className="px-2 pb-1 pt-0.5 text-[12px] font-semibold uppercase tracking-wide text-os-mute">ობიექტი · Property</div>
+              {PROPERTY_IDS.map((id) => {
+                const p = PROPERTIES[id];
+                const active = state.property.id === id;
+                return (
+                  <button
+                    key={id}
+                    data-testid={`property-${id}`}
+                    onClick={() => props.onProperty(id)}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-white/5 ${active ? "bg-white/5" : ""}`}
+                  >
+                    <span className="grid h-9 w-9 place-items-center rounded-full text-[13px] font-bold" style={{ background: id === "bioli" ? "#1F3B2A" : "#3A2F1A", color: id === "bioli" ? "#86EFAC" : "#E7C98B" }}>
+                      {p.short.slice(0, 1)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[14px] font-medium text-os-ink">{p.name}</span>
+                      <span className="block text-[12px] text-os-mute">{p.rules.length} rules · {p.document.fileName}</span>
+                    </span>
+                    {active && <Check className="h-4 w-4 text-emerald-400" />}
+                  </button>
+                );
+              })}
+              <div className="px-3 pb-1 pt-1.5 text-[11px] text-os-mute">გადართვა ტვირთავს ობიექტის საწყის მდგომარეობას · switching loads that property&apos;s start state</div>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
@@ -401,7 +601,7 @@ function TopNav(props: {
             <Popover onClose={() => setMenu(null)} width="w-72">
               <div className="px-2 pb-1.5 pt-0.5">
                 <div className="text-[14px] font-semibold text-os-ink">ანა · Trainee</div>
-                <div className="text-[12px] text-os-mute">Front desk · Ambassadori Kachreti</div>
+                <div className="text-[12px] text-os-mute">Front desk · {state.property.short}</div>
               </div>
               <div className="my-1 h-px bg-white/5" />
               <MenuItem icon={RotateCcw} k="R" label="სრული გადატვირთვა · Full reset" onClick={() => sharedHotkeys().R?.()} />
@@ -461,7 +661,6 @@ function WindowFrame(props: {
   const startDrag = (e: React.PointerEvent, mode: "move" | "resize") => {
     if (e.button !== 0) return;
     e.preventDefault();
-    props.onFocus();
     const sx = e.clientX;
     const sy = e.clientY;
     const start = { x: win.x, y: win.y, w: win.w, h: win.h };
@@ -490,8 +689,8 @@ function WindowFrame(props: {
   return (
     <section
       data-testid={`win-${props.id}`}
-      onPointerDownCapture={props.onFocus}
-      className={`absolute flex flex-col overflow-hidden rounded-2xl border border-os-edge bg-os-panel shadow-[0_24px_70px_-20px_rgba(0,0,0,.85)] ${props.buzz ? "animate-buzz" : ""} ${win.open ? "" : "hidden"}`}
+      onPointerDown={props.onFocus}
+      className={`absolute flex flex-col overflow-hidden rounded-2xl border border-os-edge bg-os-panel shadow-[0_24px_70px_-20px_rgba(0,0,0,.85)] ${props.buzz ? "animate-buzz" : ""}`}
       style={{ left: win.x, top: win.y, width: win.w, height: win.h, zIndex: win.z }}
     >
       <header

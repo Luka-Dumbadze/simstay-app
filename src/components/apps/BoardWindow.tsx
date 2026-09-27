@@ -43,18 +43,18 @@ export default function BoardWindow({ state }: { state: SimuState }) {
       <div className="flex shrink-0 items-center gap-2 border-b border-white/5 px-3 py-1.5 text-[12px] text-slate-400">
         <PlugZap className="h-3.5 w-3.5 text-amber-400" />
         <span>Adapter: <b className="text-slate-200">Mews-shaped</b> (dry-run) · Mock PMS</span>
-        <span className="ml-auto">რიგი 1–2 ოთახები · 3–4 ვილები · გასაყიდი {counts.inspected ?? 0}</span>
+        <span className="ml-auto">{state.property.units_ka} · გასაყიდი {counts.inspected ?? 0}</span>
       </div>
 
       {/* Impact HUD */}
       <div data-testid="impact-hud" className="grid shrink-0 grid-cols-4 gap-px border-b border-white/5 bg-white/5 text-center">
-        <Stat icon={ShieldAlert} tone="text-rose-300" label="შეცდომა დაიჭირა ჩაწერამდე" en="errors caught pre-posting" value={String(m.errorsCaught)} />
-        <Stat icon={UserCheck} tone="text-sky-300" label="მენეჯერის ჩარევა აცილებულია" en="interventions avoided" value={String(m.interventionsAvoided)} />
-        <Stat icon={Clock3} tone="text-amber-300" label="მენეჯერის დრო დაზოგილია" en={`est. ${MIN_PER_INTERVENTION} min / intervention`} value={`~${m.interventionsAvoided * MIN_PER_INTERVENTION} წთ`} />
+        <Stat icon={ShieldAlert} tone="text-rose-300" label="ჩაწერამდე დაჭერილი შეცდომა" en="errors caught pre-posting" value={String(m.errorsCaught)} />
+        <Stat icon={UserCheck} tone="text-sky-300" label="მენეჯერის თავიდან აცილებული ჩარევა" en="interventions avoided" value={String(m.interventionsAvoided)} />
+        <Stat icon={Clock3} tone="text-amber-300" label="მენეჯერის დაზოგილი დრო" en={`est. ${MIN_PER_INTERVENTION} min / intervention`} value={`~${m.interventionsAvoided * MIN_PER_INTERVENTION} წთ`} />
         <Stat
           icon={Timer}
           tone={m.readyAt ? "text-emerald-300" : m.checkoutAt ? "text-amber-200" : "text-slate-400"}
-          label={`${unitName(state.rooms, focusRoom)} მზადაა გასვლიდან`}
+          label={`${unitName(state.rooms, focusRoom)}: გასვლიდან მზადყოფნამდე`}
           en={m.readyAt ? "checkout → inspected" : m.checkoutAt ? "turnaround running…" : "turnaround"}
           value={ready}
         />
@@ -81,7 +81,7 @@ export default function BoardWindow({ state }: { state: SimuState }) {
         </div>
       </div>
       <div className="scroll-thin min-h-0 flex-1 overflow-y-auto p-3">
-        <div className="grid grid-cols-10 gap-1.5">
+        <div className={`grid gap-1.5 ${state.rooms.length > 24 ? "grid-cols-10" : "grid-cols-6"}`}>
           {state.rooms.map((r) => <RoomCell key={`${r.number}-${r.status}`} room={r} focus={r.number === focusRoom} now={now} />)}
         </div>
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-400">
@@ -91,7 +91,7 @@ export default function BoardWindow({ state }: { state: SimuState }) {
               {STATUS_META[s].ka} {counts[s] ?? 0}
             </span>
           ))}
-          <span className="text-slate-500">· P2: იყიდება მხოლოდ შემოწმებული</span>
+          <span className="text-slate-500">· იყიდება მხოლოდ შემოწმებული</span>
         </div>
       </div>
 

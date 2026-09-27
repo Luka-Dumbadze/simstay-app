@@ -1,9 +1,13 @@
-// SimuStay domain model (spec §3.3), extended with the configurable workspace matrix.
+// SimStay domain model (spec §3.3), extended with the configurable workspace matrix.
 
 export type Tier = "H" | "P" | "D"; // Hard invariant | signed Policy | Discretion
 export type RoomStatus = "occupied" | "dirty" | "clean" | "inspected" | "ooo" | "oos";
 export type WindowNo = 1 | 2 | 3 | 4;
-export type ChargeCode = "VILLA" | "GOLF" | "WINE" | "REST";
+export type ChargeCode =
+  | "VILLA" | "GOLF" | "WINE" | "REST" // Ambassadori Kachreti
+  | "COTTAGE" | "HALO" | "SPECTRO" | "PHYTO" | "BAR"; // Bioli Wellness
+export type PayerType = "guest" | "company" | "package";
+export type PropertyId = "ambassadori" | "bioli";
 
 export interface SourceSpan {
   page: number;
@@ -11,7 +15,7 @@ export interface SourceSpan {
 }
 
 export type RuleCheck =
-  | { kind: "route"; chargeCodes: ChargeCode[]; payer: "company" | "guest" }
+  | { kind: "route"; chargeCodes: ChargeCode[]; payer: PayerType }
   | { kind: "window_requires_payee" }
   | { kind: "direct_bill_requires_letter" }
   | { kind: "balanced" }
@@ -38,8 +42,8 @@ export interface Charge {
 export interface FolioWindow {
   n: WindowNo;
   payee: string | null;
-  payerType: "guest" | "company" | null;
-  method: "card" | "direct_bill" | null;
+  payerType: PayerType | null;
+  method: "card" | "direct_bill" | "prepaid" | null;
 }
 
 export interface Folio {
@@ -149,8 +153,53 @@ export interface Workspace {
   skins: { pms: PmsSkin; comms: CommsSkin };
 }
 
+export interface MenuOption {
+  id: string;
+  label_ka: string;
+  label_en: string;
+}
+
+// In-room personalisation menus as the property publishes them, and one guest's confirmed choices.
+export interface PreferenceMenu {
+  aroma: MenuOption[];
+  pillow: MenuOption[];
+  sheets: MenuOption[];
+}
+
+// Per-property demo context: brand, persona, AI photo-check tags and the scripted autopilot route.
+export interface PropertyInfo {
+  id: PropertyId;
+  name: string;
+  name_ka: string;
+  short: string;
+  location: string;
+  rulebook_ka: string;
+  units_ka: string;
+  docFileName: string;
+  photoTags_ka: string[];
+  persona: { summary_ka: string; summary_en: string; demand_ka: string; demand_en: string; languages: string };
+  preferenceMenu?: PreferenceMenu;
+  guestCard?: { aroma: string; pillow: string; sheets: string };
+  demoScript: { chargeId: string; window: WindowNo }[];
+  csvSample: string;
+}
+
+// Which windows are open is persisted server-side so a close survives reloads, resets and property switches.
+// Each browser applies its own changes locally first; `writer` + `seqByClient` let the server drop stale
+// requests and let clients adopt only other operators' changes.
+export interface UiState {
+  openWindows: Record<AppId, boolean>;
+  focusedWindow: AppId | null;
+  rev: number;
+  writer: string | null;
+  seqByClient: Record<string, number>;
+}
+
 export interface SimuState {
+  bootId: string; // changes when the server process restarts; clients reset version tracking on change
   mode: "online" | "offline";
+  property: PropertyInfo;
+  ui: UiState;
   workspace: Workspace;
   rules: Rule[];
   ingest: IngestInfo | null;

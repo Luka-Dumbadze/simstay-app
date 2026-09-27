@@ -6,14 +6,23 @@ import type { ActResult, SimuState } from "./types";
 export function useSimuStream(): SimuState | null {
   const [state, setState] = useState<SimuState | null>(null);
   const version = useRef(-1);
+  const bootId = useRef<string | null>(null);
   useEffect(() => {
     let es: EventSource | null = null;
     let poll: ReturnType<typeof setInterval> | null = null;
     let reopen: ReturnType<typeof setTimeout> | null = null;
+    let watchdog: ReturnType<typeof setInterval> | null = null;
+    let lastHeard = Date.now();
     let alive = true;
-    // A reset reuses version numbers only upward, so dropping older frames is always safe.
+    // Versions only grow within one server process, so older frames are dropped. A restarted server
+    // starts again from 0 with a new bootId; without this reset the page would ignore it and look frozen.
     const accept = (s: SimuState) => {
-      if (s && typeof s.version === "number" && s.version > version.current) {
+      if (!s || typeof s.version !== "number") return;
+      if (s.bootId !== bootId.current) {
+        bootId.current = s.bootId;
+        version.current = -1;
+      }
+      if (s.version > version.current) {
         version.current = s.version;
         setState(s);
       }
@@ -25,20 +34,27 @@ export function useSimuStream(): SimuState | null {
         try { accept(await (await fetch("/api/simustay/state", { cache: "no-store" })).json()); } catch { /* keep polling */ }
       }, 1000);
     };
+    const reconnect = (delayMs: number) => {
+      es?.close();
+      startPoll();
+      if (reopen) clearTimeout(reopen);
+      reopen = setTimeout(open, delayMs);
+    };
     const open = () => {
       if (!alive) return;
+      lastHeard = Date.now();
       es = new EventSource("/api/simustay/stream");
       es.onmessage = (e) => {
+        lastHeard = Date.now();
         try { accept(JSON.parse(e.data)); } catch { /* ignore a torn frame */ }
         stopPoll();
       };
-      es.onerror = () => {
-        es?.close();
-        startPoll();
-        if (reopen) clearTimeout(reopen);
-        reopen = setTimeout(open, 2000);
-      };
+      es.addEventListener("ping", () => { lastHeard = Date.now(); });
+      es.onerror = () => reconnect(2000);
     };
+    // The server sends a heartbeat every 5 s. Silence means a dead or half-open connection (server restart,
+    // laptop sleep, Wi-Fi drop) that the browser may never report as an error, so reconnect ourselves.
+    watchdog = setInterval(() => { if (Date.now() - lastHeard > 12_000) reconnect(0); }, 3000);
     fetch("/api/simustay/state", { cache: "no-store" }).then((r) => r.json()).then(accept).catch(() => startPoll());
     open();
     return () => {
@@ -46,6 +62,7 @@ export function useSimuStream(): SimuState | null {
       es?.close();
       stopPoll();
       if (reopen) clearTimeout(reopen);
+      if (watchdog) clearInterval(watchdog);
     };
   }, []);
   return state;
@@ -110,21 +127,41 @@ export function useToasts(): Toast[] {
 
 export type HotkeyMap = Partial<Record<string, () => void>>;
 
+const PRESENTER_KEYS = new Set(["R", "B", "O", "L", "A", "1", "2"]);
+const HOTKEY_MESSAGE = "simstay-hotkey";
+
+// When a page runs embedded (the phone iframe inside the desktop), key presses land in the iframe and never
+// reach the desktop. The embedded page therefore forwards every presenter hotkey to its parent instead of
+// handling it, so each key press triggers exactly one action (and never a browser shortcut such as tab search).
 export function usePresenterHotkeys(map: HotkeyMap) {
   const ref = useRef(map);
   ref.current = map;
   useEffect(() => {
+    const embedded = window.parent !== window;
     const onKey = (e: KeyboardEvent) => {
       if (!e.ctrlKey || !e.shiftKey || e.altKey || e.metaKey) return;
       const key = e.code.startsWith("Key") ? e.code.slice(3) : e.code.startsWith("Digit") ? e.code.slice(5) : "";
-      const fn = ref.current[key];
-      if (!fn) return;
+      if (!PRESENTER_KEYS.has(key)) return;
       e.preventDefault();
       e.stopPropagation();
-      fn();
+      if (embedded) {
+        window.parent.postMessage({ type: HOTKEY_MESSAGE, key }, window.location.origin);
+        return;
+      }
+      ref.current[key]?.();
+    };
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      const data = e.data as { type?: string; key?: string } | null;
+      if (data?.type !== HOTKEY_MESSAGE || typeof data.key !== "string" || !PRESENTER_KEYS.has(data.key)) return;
+      ref.current[data.key]?.();
     };
     window.addEventListener("keydown", onKey, { capture: true });
-    return () => window.removeEventListener("keydown", onKey, { capture: true });
+    if (!embedded) window.addEventListener("message", onMessage);
+    return () => {
+      window.removeEventListener("keydown", onKey, { capture: true });
+      window.removeEventListener("message", onMessage);
+    };
   }, []);
 }
 
@@ -159,11 +196,28 @@ export function useNow(intervalMs = 1000): number {
 const DEMO_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="320" height="200" fill="#e7e1d6"/>' +
   '<rect x="30" y="80" width="200" height="90" rx="8" fill="#fff" stroke="#cbd5e1"/><rect x="40" y="62" width="70" height="30" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>' +
-  '<rect x="250" y="40" width="44" height="130" fill="#a3b18a"/><text x="20" y="30" font-family="sans-serif" font-size="16" fill="#334155">Villa 304 - clean</text></svg>';
+  '<rect x="250" y="40" width="44" height="130" fill="#a3b18a"/><text x="20" y="30" font-family="sans-serif" font-size="16" fill="#334155">Unit ready - clean</text></svg>';
 export const DEMO_PHOTO = `data:image/svg+xml;base64,${btoa(DEMO_SVG)}`;
 
-// "ვილა 304" for villas, "ოთახი 101" for resort rooms.
+// "ვილა 304", "კოტეჯი 12", "შალე 16" or "ოთახი 101", from the unit's type.
 export function unitName(rooms: { number: string; type: string }[], roomNo: string): string {
   const type = rooms.find((r) => r.number === roomNo)?.type ?? "";
-  return `${type.startsWith("ვილა") ? "ვილა" : "ოთახი"} ${roomNo}`;
+  const kind = type.includes("ვილა") ? "ვილა" : type.includes("კოტეჯი") ? "კოტეჯი" : type.includes("შალე") ? "შალე" : "ოთახი";
+  return `${kind} ${roomNo}`;
+}
+
+// Chat display language (guest inspector toggle); per-viewer, not shared state.
+export type ChatLang = "ka" | "en";
+let chatLang: ChatLang = "ka";
+const chatLangListeners = new Set<() => void>();
+export function setChatLang(l: ChatLang) {
+  chatLang = l;
+  chatLangListeners.forEach((f) => f());
+}
+export function useChatLang(): ChatLang {
+  return useSyncExternalStore(
+    (l) => { chatLangListeners.add(l); return () => { chatLangListeners.delete(l); }; },
+    () => chatLang,
+    () => "ka" as ChatLang,
+  );
 }

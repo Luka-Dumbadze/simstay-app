@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, Check, ChevronLeft, ChevronRight, ClipboardCheck, ImageIcon, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import { act, DEMO_PHOTO, sharedHotkeys, unitName, usePresenterHotkeys, useSimuStream, useToasts } from "@/lib/simustay/client";
+import { guestCardLabels } from "@/lib/simustay/properties";
 import type { HkTask, SimuState } from "@/lib/simustay/types";
 
 type Role = "hk" | "supervisor";
@@ -42,8 +43,8 @@ export default function HousekeepingPhone() {
         <div className="flex items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-sky-500 to-rose-500 text-sm font-black text-white">S</span>
           <div className="leading-tight">
-            <div className="font-semibold">SimuStay · {role === "hk" ? "ნინო" : "თამარი"}</div>
-            <div className="text-[13px] text-slate-500">{role === "hk" ? "დიასახლისობა" : "ზედამხედველი"} · Ambassadori Kachreti</div>
+            <div className="font-semibold">SimStay · {role === "hk" ? "ნინო" : "თამარი"}</div>
+            <div className="text-[13px] text-slate-500">{role === "hk" ? "დიასახლისობა" : "ზედამხედველი"} · {state?.property.short ?? "SimStay"}</div>
           </div>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
@@ -59,6 +60,8 @@ export default function HousekeepingPhone() {
           <TaskDetail
             task={task}
             name={unitName(state.rooms, task.room)}
+            tags={state.property.photoTags_ka}
+            card={task.room === state.folio.room ? guestCardLabels(state.property) : null}
             photo={photos[task.id] ?? task.photo}
             onPhoto={(p) => setPhotos((x) => ({ ...x, [task.id]: p }))}
             onBack={() => setOpenId(null)}
@@ -87,7 +90,7 @@ function StatusBar() {
   return (
     <div className="flex h-8 shrink-0 items-center justify-between bg-white px-6 text-[13px] font-semibold">
       <span>{t}</span>
-      <span className="text-slate-400">SimuStay</span>
+      <span className="text-slate-400">SimStay</span>
       <span>5G ▮▮▮</span>
     </div>
   );
@@ -147,7 +150,7 @@ function TaskList({ state, ring, onOpen }: { state: SimuState; ring: boolean; on
   );
 }
 
-function TaskDetail(props: { task: HkTask; name: string; photo: string | null; onPhoto: (p: string) => void; onBack: () => void; onDone: () => void }) {
+function TaskDetail(props: { task: HkTask; name: string; tags: string[]; card: ReturnType<typeof guestCardLabels>; photo: string | null; onPhoto: (p: string) => void; onBack: () => void; onDone: () => void }) {
   const { task, photo } = props;
   const [busy, setBusy] = useState(false);
   const file = useRef<HTMLInputElement>(null);
@@ -170,6 +173,12 @@ function TaskDetail(props: { task: HkTask; name: string; photo: string | null; o
         <div className="text-[26px] font-bold">{props.name}</div>
         <div className="text-[15px] font-semibold text-slate-500">{doneCount}/{task.checklist.length}</div>
       </div>
+      {props.card && (
+        <div data-testid="hk-guest-card" className="rounded-2xl bg-amber-50 px-4 py-3 text-[15px] text-amber-900 shadow-sm">
+          <div className="text-[12px] font-semibold uppercase tracking-wide text-amber-700">სტუმრის ბარათი</div>
+          არომატი: <b>{props.card.aroma}</b> · ბალიში: <b>{props.card.pillow}</b> · თეთრეული: <b>{props.card.sheets}</b>
+        </div>
+      )}
       <div className="h-2 overflow-hidden rounded-full bg-slate-200">
         <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${(doneCount / task.checklist.length) * 100}%` }} />
       </div>
@@ -221,8 +230,11 @@ function TaskDetail(props: { task: HkTask; name: string; photo: string | null; o
         />
       </div>
       {photo && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={photo} alt="room" className="h-28 w-full rounded-2xl object-cover shadow-sm" />
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photo} alt="room" className="h-28 w-full rounded-2xl object-cover shadow-sm" />
+          <PhotoCheck key={photo.length} tags={props.tags} />
+        </>
       )}
 
       <button
@@ -234,7 +246,31 @@ function TaskDetail(props: { task: HkTask; name: string; photo: string | null; o
         {busy ? <Loader2 className="h-6 w-6 animate-spin" /> : <ClipboardCheck className="h-7 w-7" />}
         დასუფთავებულია
       </button>
-      {!ready && <div className="text-center text-[13px] text-slate-500">ჩართეთ 5-ვე პუნქტი და გადაიღეთ ფოტო</div>}
+      {!ready && <div className="text-center text-[13px] text-slate-500">მონიშნეთ 5-ვე პუნქტი და გადაიღეთ ფოტო</div>}
+    </div>
+  );
+}
+
+// Simulated vision check: tags appear one by one after a short "analysing" beat. Labelled as a simulation.
+function PhotoCheck({ tags }: { tags: string[] }) {
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const timers = tags.map((_, i) => setTimeout(() => setShown(i + 1), 500 + i * 350));
+    return () => timers.forEach(clearTimeout);
+  }, [tags]);
+  return (
+    <div data-testid="photo-check" className="rounded-2xl bg-white p-3 shadow-sm">
+      <div className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold text-slate-600">
+        {shown < tags.length ? <Loader2 className="h-4 w-4 animate-spin text-emerald-600" /> : <Sparkles className="h-4 w-4 text-emerald-600" />}
+        AI ფოტო-შემოწმება <span className="font-normal text-slate-400">· სიმულაცია</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {tags.slice(0, shown).map((t) => (
+          <span key={t} data-testid="photo-tag" className="animate-slide-up rounded-full bg-emerald-100 px-2.5 py-1 text-[13px] font-semibold text-emerald-800">
+            [{t}]
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

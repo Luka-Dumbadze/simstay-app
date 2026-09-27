@@ -27,7 +27,7 @@
       "tier": "H",
       "title_ka": "რესტორნის ხარჯი რჩება სტუმრის პირად ანგარიშზე",
       "title_en": "Restaurant charges stay on the guest's personal account",
-      "source": { "page": 2, "quote": "რესტორნის ხარჯები სტუმარი იხდის პირადი ბარათით" },
+      "source": { "page": 2, "quote": "რესტორნის ხარჯებს სტუმარი იხდის პირადი ბარათით" },
       "check": { "kind": "route", "chargeCodes": ["REST"], "payer": "guest" }
     },
     {

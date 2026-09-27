@@ -1,7 +1,10 @@
 // In-memory state singleton with snapshots and an event bus (spec §4.3).
-import start from "@/lib/simustay/fixtures/snapshots/start.json";
-import beforeCheckout from "@/lib/simustay/fixtures/snapshots/before-checkout.json";
-import type { SimuState } from "./types";
+import ambassadoriStart from "@/lib/simustay/fixtures/snapshots/ambassadori/start.json";
+import ambassadoriBefore from "@/lib/simustay/fixtures/snapshots/ambassadori/before-checkout.json";
+import bioliStart from "@/lib/simustay/fixtures/snapshots/bioli/start.json";
+import bioliBefore from "@/lib/simustay/fixtures/snapshots/bioli/before-checkout.json";
+import { randomUUID } from "node:crypto";
+import type { PropertyId, SimuState, UiState } from "./types";
 
 type Listener = (s: SimuState) => void;
 export type SnapshotId = "start" | "before-checkout";
@@ -12,6 +15,7 @@ export interface Store {
   setMode(m: SimuState["mode"]): void;
   commit(mut: (s: SimuState) => void): SimuState;
   reset(snapshot?: SnapshotId): SimuState;
+  switchProperty(id: PropertyId): SimuState;
   subscribe(l: Listener): () => void;
 }
 
@@ -20,10 +24,13 @@ declare global {
   var __simustay: Store | undefined;
 }
 
-const SNAPSHOTS: Record<SnapshotId, SimuState> = {
-  start: start as unknown as SimuState,
-  "before-checkout": beforeCheckout as unknown as SimuState,
+const SNAPSHOTS: Record<PropertyId, Record<SnapshotId, SimuState>> = {
+  ambassadori: { start: ambassadoriStart as unknown as SimuState, "before-checkout": ambassadoriBefore as unknown as SimuState },
+  bioli: { start: bioliStart as unknown as SimuState, "before-checkout": bioliBefore as unknown as SimuState },
 };
+
+// Window rules live in ./windows.ts (pure, unit-tested); re-exported for existing importers.
+export { DEMO_QUARTET } from "./windows";
 
 const clone = <T,>(v: T): T => structuredClone(v);
 
@@ -46,9 +53,34 @@ function notify(store: Store, s: SimuState) {
   });
 }
 
+// Snapshots carry only the open/focus fields; fill the bookkeeping fields for a fresh process.
+function normalizeUi(ui: Partial<UiState> | undefined): UiState {
+  return {
+    openWindows: { ...(ui?.openWindows ?? {}) } as UiState["openWindows"],
+    focusedWindow: ui?.focusedWindow ?? null,
+    rev: ui?.rev ?? 0,
+    writer: ui?.writer ?? null,
+    seqByClient: { ...(ui?.seqByClient ?? {}) },
+  };
+}
+
 function create(): Store {
-  const initial = hydrate(SNAPSHOTS.start);
+  const initial = hydrate(SNAPSHOTS.ambassadori.start);
+  initial.bootId = randomUUID();
+  initial.ui = normalizeUi(initial.ui);
   initial.mode = process.env.OFFLINE_DEMO === "true" ? "offline" : "online";
+  // Mode, the app matrix and open windows are the presenter's desk, not demo data: they survive resets.
+  const load = (snapshot: SimuState): SimuState => {
+    const s = hydrate(snapshot);
+    s.bootId = store.state.bootId;
+    s.mode = store.state.mode;
+    s.workspace = clone(store.state.workspace);
+    s.ui = clone(store.state.ui);
+    s.version = store.state.version + 1;
+    store.state = s;
+    notify(store, s);
+    return s;
+  };
   const store: Store = {
     state: initial,
     listeners: new Set(),
@@ -64,13 +96,11 @@ function create(): Store {
       return next;
     },
     reset(snapshot = "start") {
-      const s = hydrate(SNAPSHOTS[snapshot] ?? SNAPSHOTS.start);
-      s.mode = store.state.mode;
-      s.workspace = clone(store.state.workspace); // the hotel's app matrix survives a demo reset
-      s.version = store.state.version + 1;
-      store.state = s;
-      notify(store, s);
-      return s;
+      const pack = SNAPSHOTS[store.state.property.id] ?? SNAPSHOTS.ambassadori;
+      return load(pack[snapshot] ?? pack.start);
+    },
+    switchProperty(id) {
+      return load(SNAPSHOTS[id].start);
     },
     subscribe(l) {
       store.listeners.add(l);

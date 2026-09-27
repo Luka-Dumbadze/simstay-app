@@ -1,0 +1,72 @@
+{
+  "document": {
+    "fileName": "bioli_kojori_wellness_protocols.pdf",
+    "title_ka": "ბიოლი — ველნეს კურორტის საოპერაციო წესდება (სადემონსტრაციო)",
+    "pages": 2,
+    "languages": ["ka", "en"]
+  },
+  "rules": [
+    {
+      "id": "H1",
+      "tier": "H",
+      "title_ka": "კოტეჯში განთავსება — წინასწარ გადახდილ ფანჯარაში (W2)",
+      "title_en": "The cottage stay posts to the prepaid window (W2)",
+      "source": { "page": 1, "quote": "წინასწარ გადახდილი განთავსება და პროგრამა ჩაიწერება წინასწარი გადახდის ფანჯარაში" },
+      "check": { "kind": "route", "chargeCodes": ["COTTAGE"], "payer": "package" }
+    },
+    {
+      "id": "H2",
+      "tier": "H",
+      "title_ka": "ალკოჰოლი და მინიბარი არ შედის დეტოქს-პაკეტში და რჩება სტუმრის პირად ანგარიშზე",
+      "title_en": "Alcohol and minibar are not part of the detox package and stay on the guest's personal account",
+      "source": { "page": 1, "quote": "ალკოჰოლი და მინიბარი არ შედის დეტოქს-პაკეტში და რჩება სტუმრის პირად ანგარიშზე" },
+      "check": { "kind": "route", "chargeCodes": ["BAR"], "payer": "guest" }
+    },
+    {
+      "id": "H3",
+      "tier": "H",
+      "title_ka": "განთავსებაში შემავალი სპექტრომეტრია და მარილის ოთახი — 0 ₾, წინასწარ გადახდილ ფანჯარაში",
+      "title_en": "Spectrometry and salt-room access included with the stay post at 0 GEL to the prepaid window",
+      "source": { "page": 1, "quote": "განთავსების ფასში შედის საუზმე, 15-წუთიანი ველნეს კონსულტაცია, სპექტრომეტრია და მარილის ოთახი" },
+      "check": { "kind": "route", "chargeCodes": ["HALO", "SPECTRO"], "payer": "package" }
+    },
+    {
+      "id": "H4",
+      "tier": "H",
+      "title_ka": "პროგრამასა და განთავსებაში შეუსვლელი პროცედურა — სტუმრის პირად ანგარიშზე, ფასების ცხრილით",
+      "title_en": "Procedures outside the program and stay inclusions go to the guest's personal account at list price",
+      "source": { "page": 2, "quote": "პროგრამაში შეუსვლელ პროცედურებს სტუმარი იხდის ფასების ცხრილის მიხედვით" },
+      "check": { "kind": "route", "chargeCodes": ["PHYTO"], "payer": "guest" }
+    },
+    {
+      "id": "H5",
+      "tier": "H",
+      "title_ka": "ყოველ ფანჯარას სჭირდება გადამხდელი და გადახდის მეთოდი",
+      "title_en": "Every folio window needs a payee and a payment method",
+      "source": { "page": 1, "quote": "ფოლიოს ყოველ ფანჯარას უნდა ჰქონდეს გადამხდელი და გადახდის მეთოდი" },
+      "check": { "kind": "window_requires_payee" }
+    },
+    {
+      "id": "P1",
+      "tier": "P",
+      "title_ka": "თერმული პროცედურა (ფიტოაბაზანა, ინფრაწითელი საუნა) — მხოლოდ სპეციალისტის ექსპრეს-კონსულტაციის შემდეგ",
+      "title_en": "Thermal procedures (phytobath, infrared sauna) only after an express consultation with a specialist",
+      "source": { "page": 2, "quote": "ექსპრეს-კონსულტაცია სპეციალისტთან უფასოა და ეხმარება უკუჩვენებების გამორიცხვაში" }
+    },
+    {
+      "id": "P3",
+      "tier": "P",
+      "title_ka": "კოტეჯი იყიდება მხოლოდ ზედამხედველის შემოწმების შემდეგ",
+      "title_en": "A cottage is sellable only after supervisor inspection",
+      "source": { "page": 2, "quote": "კოტეჯი გაიყიდება მხოლოდ ზედამხედველის შემოწმების შემდეგ" },
+      "check": { "kind": "sell_requires", "status": "inspected" }
+    },
+    {
+      "id": "D1",
+      "tier": "D",
+      "title_ka": "პროგრამის ფარგლებში პროცედურის ჩანაცვლება — ველნეს ექსპერტის შეხედულებით",
+      "title_en": "Substituting a procedure within the program is at the wellness expert's discretion",
+      "source": { "page": 2, "quote": "ველნეს ექსპერტის შეხედულებით" }
+    }
+  ]
+}

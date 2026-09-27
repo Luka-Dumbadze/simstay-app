@@ -16,7 +16,7 @@ export default function OpsWindow({ state }: { state: SimuState }) {
   const handoffs: Handoff[] = [
     ...state.gateLog
       .filter((g) => !g.ok || g.ruleId === "BAL")
-      .map((g) => ({ t: g.at, kind: g.ok ? ("gate-ok" as const) : ("gate-fail" as const), text: g.ok ? `ფრონტ-ოფისი → დიასახლისობა · ${g.message_ka}` : `გრეიდერმა დაბლოკა · ${g.ruleId}: ${g.message_ka}` })),
+      .map((g) => ({ t: g.at, kind: g.ok ? ("gate-ok" as const) : ("gate-fail" as const), text: g.ok ? `ფრონტ-ოფისი → დიასახლისობა · ${g.message_ka}` : `შემფასებელმა დაბლოკა · ${g.ruleId}: ${g.message_ka}` })),
     ...state.adapterLog.filter((l) => l.line.startsWith("PATCH") || l.line.startsWith("IMPORT")).map((l) => ({ t: l.t, kind: "pms" as const, text: l.line })),
   ].sort((a, b) => b.t - a.t);
 

@@ -1,7 +1,68 @@
 {
   "mode": "offline",
+  "property": {
+    "id": "ambassadori",
+    "name": "Ambassadori Kachreti Island & Golf Resort",
+    "name_ka": "ამბასადორი კაჭრეთი — კუნძულისა და გოლფის კურორტი",
+    "short": "Ambassadori Kachreti",
+    "location": "კაჭრეთი, კახეთი",
+    "rulebook_ka": "ამბასადორის წესდება",
+    "units_ka": "101–210 — ოთახები · 301–410 — ვილები",
+    "docFileName": "ambassadori_kachreti_sops.pdf",
+    "photoTags_ka": [
+      "საწოლი გასწორებულია ✓",
+      "ხალათი ადგილზეა ✓",
+      "ღვინო მარჯვნივ ✓"
+    ],
+    "persona": {
+      "summary_ka": "ირაკლი კაპანაძე · საქართველოს ბანკის კორპორატიული რიტრიტი",
+      "summary_en": "Irakli Kapanadze · Bank of Georgia corporate retreat",
+      "demand_ka": "ვილა და გოლფი ბანკის ანგარიშზე; ღვინო და ვახშამი — პირად ბარათზე",
+      "demand_en": "Villa and golf on the bank's account; wine and dinner on his personal card",
+      "languages": "ka · en"
+    },
+    "demoScript": [
+      {
+        "chargeId": "c-villa",
+        "window": 2
+      },
+      {
+        "chargeId": "c-golf",
+        "window": 2
+      },
+      {
+        "chargeId": "c-wine",
+        "window": 2
+      },
+      {
+        "chargeId": "c-wine",
+        "window": 1
+      },
+      {
+        "chargeId": "c-rest",
+        "window": 1
+      }
+    ],
+    "csvSample": "room,status\n105,inspected\n209,clean\n307,clean\n406,inspected\n"
+  },
+  "ui": {
+    "openWindows": {
+      "ingest": false,
+      "pms": false,
+      "comms": false,
+      "phone": false,
+      "board": false,
+      "agents": false,
+      "ops": false,
+      "store": false
+    },
+    "focusedWindow": null,
+    "rev": 0,
+    "writer": null,
+    "seqByClient": {}
+  },
   "workspace": {
-    "profileId": "ambassadori-classic",
+    "profileId": "classic-desk",
     "installed_apps": [
       "ingest",
       "pms",
@@ -70,7 +131,7 @@
       {
         "id": "c-golf",
         "code": "GOLF",
-        "label_ka": "გოლფი, 18 ორმო",
+        "label_ka": "გოლფის მოედნის საფასური",
         "label_en": "18-Hole Golf Green Fee",
         "amount": 180,
         "window": null
@@ -362,7 +423,7 @@
         },
         {
           "id": "amenities",
-          "label_ka": "აქსესუარები",
+          "label_ka": "ჰიგიენური საშუალებები",
           "label_en": "Amenities",
           "done": false
         },
@@ -402,7 +463,7 @@
         },
         {
           "id": "amenities",
-          "label_ka": "აქსესუარები",
+          "label_ka": "ჰიგიენური საშუალებები",
           "label_en": "Amenities",
           "done": false
         },
@@ -432,7 +493,7 @@
       "id": "personal",
       "text_ka": "ღვინის დეგუსტაცია და რესტორანი თქვენს პირად ბარათზე ჩაიწერება",
       "text_en": "Wine tasting and restaurant will go on your personal card",
-      "reply_ka": "კი, საფერავი და ვახშამი ჩემით გადავიხდი. მადლობა.",
+      "reply_ka": "კი, საფერავისა და ვახშმის საფასურს თავად გადავიხდი. მადლობა.",
       "reply_en": "Yes, I'll pay for the Saperavi and dinner myself. Thank you."
     },
     {

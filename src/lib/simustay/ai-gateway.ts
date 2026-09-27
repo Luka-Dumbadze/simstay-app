@@ -1,13 +1,12 @@
 // Dual-mode AI gateway (spec §4.2). Offline: fixture after a fixed simulated latency.
 // Online: one Gemini call with a hard timeout; any failure trips the breaker to offline.
 import { createHash } from "node:crypto";
-import rulesFixture from "@/lib/simustay/fixtures/rules.alazani.json";
+import { PROPERTIES } from "./properties";
 import { getStore } from "./store";
 import type { Rule, RuleCheck, Tier } from "./types";
 
 const TIMEOUT_MS = Number(process.env.SIMUSTAY_AI_TIMEOUT_MS ?? 2500);
 const SIM_LATENCY_MS = Number(process.env.SIMUSTAY_SIM_LATENCY_MS ?? 800);
-const FIXTURE_RULES = rulesFixture.rules as Rule[];
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -38,14 +37,13 @@ function validate(raw: unknown): Rule[] {
 }
 
 // Live extraction yields text only; machine checks for known rule ids come from the reviewed fixture.
-function attachChecks(rules: Rule[]): Rule[] {
-  const known = new Map<string, RuleCheck | undefined>(FIXTURE_RULES.map((r) => [r.id, r.check]));
+function attachChecks(rules: Rule[], fixture: Rule[]): Rule[] {
+  const known = new Map<string, RuleCheck | undefined>(fixture.map((r) => [r.id, r.check]));
   return rules.map((r) => (r.check || !known.get(r.id) ? r : { ...r, check: known.get(r.id) }));
 }
 
-const cachedPack = (): Rule[] => structuredClone(FIXTURE_RULES);
 
-async function callGemini(pdf: Buffer, mimeType: string, signal: AbortSignal): Promise<Rule[]> {
+async function callGemini(pdf: Buffer, mimeType: string, signal: AbortSignal, fixture: Rule[]): Promise<Rule[]> {
   const model = process.env.SIMUSTAY_MODEL ?? "gemini-2.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const res = await fetch(url, {
@@ -60,14 +58,16 @@ async function callGemini(pdf: Buffer, mimeType: string, signal: AbortSignal): P
   if (!res.ok) throw new Error(`gemini http ${res.status}`);
   const json = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
   const text = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-  return attachChecks(validate(JSON.parse(text)));
+  return attachChecks(validate(JSON.parse(text)), fixture);
 }
 
 export async function extractRules(file: Buffer, mimeType = "application/pdf"): Promise<Extraction> {
   const store = getStore();
   const sha = createHash("sha256").update(file).digest("hex");
-  const isDemoPack = file.length === 0 || sha === process.env.SIMUSTAY_DEMO_PDF_SHA;
-  const pages = rulesFixture.document.pages;
+  const pack = PROPERTIES[store.state.property.id];
+  const cachedPack = (): Rule[] => structuredClone(pack.rules);
+  const isDemoPack = file.length === 0 || sha === process.env[pack.pdfShaEnv];
+  const pages = pack.document.pages;
   const offline = process.env.OFFLINE_DEMO === "true" || store.state.mode === "offline" || !process.env.GEMINI_API_KEY;
 
   if (offline) {
@@ -87,7 +87,7 @@ export async function extractRules(file: Buffer, mimeType = "application/pdf"): 
       await sleep(TIMEOUT_MS);
       throw new Error("forced timeout (test hook)");
     }
-    const rules = await callGemini(file, mimeType, ctrl.signal);
+    const rules = await callGemini(file, mimeType, ctrl.signal, pack.rules);
     return { rules, pages, source: "live" };
   } catch {
     store.setMode("offline"); // circuit breaker: stay offline for the rest of the demo
