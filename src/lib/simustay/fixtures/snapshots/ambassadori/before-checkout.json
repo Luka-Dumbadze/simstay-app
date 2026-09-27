@@ -126,7 +126,8 @@
       "check": {
         "kind": "route",
         "chargeCodes": [
-          "REST"
+          "REST",
+          "LATE_REST"
         ],
         "payer": "guest"
       }
@@ -142,6 +143,19 @@
       },
       "check": {
         "kind": "window_requires_payee"
+      }
+    },
+    {
+      "id": "H5",
+      "tier": "H",
+      "title_ka": "დახურულ ინვოისზე ხარჯის პირდაპირი ჩამატება აკრძალულია. დაგვიანებული ხარჯი უნდა გატარდეს დამატებით ფოლიოში (Window 3).",
+      "title_en": "A closed invoice is never edited: a late charge goes to a supplementary folio (Window 3).",
+      "source": {
+        "page": 3,
+        "quote": "დახურულ ინვოისზე ხარჯის პირდაპირი ჩამატება აკრძალულია"
+      },
+      "check": {
+        "kind": "closed_invoice"
       }
     },
     {
@@ -189,8 +203,8 @@
     "at": 0
   },
   "published": true,
-  "shiftTitle_ka": "ცვლა: გასვლა · ვილა 304 (კაჭრეთის კუნძული) · სტაჟიორი: ანა",
-  "shiftTitle_en": "Shift: Check-out · Villa 304 (Kachreti Island) · Trainee: Ana",
+  "shiftTitle_ka": "ცვლა: ჩასახლება → გასვლა → დაგვიანებული ხარჯი · ვილა 304 (კაჭრეთის კუნძული) · სტაჟიორი: ანა",
+  "shiftTitle_en": "Shift: Check-in → Check-out → Late charge · Villa 304 (Kachreti Island) · Trainee: Ana",
   "folio": {
     "reservationId": "AK-2291",
     "room": "304",
@@ -597,6 +611,13 @@
     },
     {
       "id": "m1",
+      "from": "system",
+      "text_ka": "🛎 ჩასახლება: ირაკლი კაპანაძე · ვილა 304 · კორპორატიული ჯავშანი AK-2291 (საქართველოს ბანკი)",
+      "text_en": "Check-in: Irakli Kapanadze · Villa 304 · corporate booking AK-2291 (Bank of Georgia)",
+      "t": 0
+    },
+    {
+      "id": "m2",
       "from": "guest",
       "text_ka": "გამარჯობა, ირაკლი კაპანაძე ვარ, საქართველოს ბანკის კორპორატიული რიტრიტიდან. ვილისა და გოლფის საფასურს ბანკი იხდის.",
       "text_en": "Hello, I'm Irakli Kapanadze from the Bank of Georgia corporate retreat. The bank pays for the villa and golf.",

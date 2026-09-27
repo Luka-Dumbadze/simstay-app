@@ -12,7 +12,8 @@
     "demo": "node scripts/demo.mjs",
     "demo:build": "node scripts/demo.mjs --build-only --force",
     "demo:fixtures": "node scripts/gen-fixtures.mjs",
-    "demo:check": "node scripts/demo-preflight.mjs"
+    "demo:check": "node scripts/demo-preflight.mjs",
+    "test:matrix": "node scripts/matrix_check.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.5",

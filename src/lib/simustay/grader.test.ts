@@ -2,7 +2,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { gateFinish, gateMove } from "./grader.ts";
+import { gateFinish, gateMove, lateChargesOpen } from "./grader.ts";
 import type { Folio, Rule } from "./types.ts";
 
 const load = (p: string) => JSON.parse(readFileSync(new URL(p, import.meta.url), "utf8"));
@@ -39,6 +39,40 @@ describe("gateFinish · Ambassadori Kachreti", () => {
     const f = folio();
     const route: Record<string, 1 | 2> = { "c-villa": 2, "c-golf": 2, "c-wine": 1, "c-rest": 1 };
     f.charges.forEach((c) => { c.window = route[c.id]; });
+    assert.equal(gateFinish(f, rules).ok, true);
+  });
+});
+
+// After check-out: W1/W2 are invoiced (#INV-1042) and a late 80 GEL restaurant check arrives.
+const afterCheckout = () => {
+  const scenario = load("./fixtures/scenario.ambassadori-villa.json");
+  const f = folio();
+  const route: Record<string, 1 | 2> = { "c-villa": 2, "c-golf": 2, "c-wine": 1, "c-rest": 1 };
+  f.charges.forEach((c) => { c.window = route[c.id]; });
+  f.windows.forEach((w) => { if (w.n <= 2) { w.closed = true; w.invoiceNo = "INV-1042"; } });
+  f.invoices = [{ no: "INV-1042", kind: "primary", windows: [1, 2], total: 990, at: 0 }];
+  f.charges.push({ ...scenario.lateCharge.charge, window: null, late: true });
+  f.windows = f.windows.map((w) => (w.n === 3 ? { ...scenario.lateCharge.window } : w));
+  return f;
+};
+
+describe("closed invoice & late charge (H5) · Ambassadori Kachreti", () => {
+  it("blocks the late charge onto the closed company invoice with H5", () => {
+    const g = gateMove(afterCheckout(), rules, "c-late-rest", 2);
+    assert.equal(g.ok, false);
+    assert.equal(g.ruleId, "H5");
+  });
+  it("blocks it onto the closed guest invoice too", () => assert.equal(gateMove(afterCheckout(), rules, "c-late-rest", 1).ruleId, "H5"));
+  it("blocks moving an invoiced charge out of a closed invoice", () => {
+    assert.equal(gateMove(afterCheckout(), rules, "c-villa", null).ruleId, "H5");
+    assert.equal(gateMove(afterCheckout(), rules, "c-wine", 3).ruleId, "H5");
+  });
+  it("accepts the late charge in the supplementary window (W3)", () => assert.equal(gateMove(afterCheckout(), rules, "c-late-rest", 3).ok, true));
+  it("finishes the supplementary invoice once the late charge is routed; closed charges re-grade cleanly", () => {
+    const f = afterCheckout();
+    assert.equal(lateChargesOpen(f), true);
+    assert.equal(gateFinish(f, rules).ruleId, "BAL");
+    f.charges.find((c) => c.id === "c-late-rest")!.window = 3;
     assert.equal(gateFinish(f, rules).ok, true);
   });
 });

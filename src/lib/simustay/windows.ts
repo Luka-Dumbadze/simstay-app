@@ -3,8 +3,9 @@ import type { AppId, UiState } from "./types.ts";
 
 export const ALL_WINDOWS: AppId[] = ["ingest", "pms", "comms", "phone", "board", "agents", "ops", "store"];
 
-// The core demo quartet opened by "Live workspace" and by autopilot ("desk" is the PMS folio window).
-export const DEMO_QUARTET: AppId[] = ["ingest", "pms", "board", "phone"];
+// The front-desk quartet opened by "Live workspace" and by autopilot ("desk" is the PMS folio window).
+// The housekeeping phone is deliberately not part of it: it opens only when someone launches it.
+export const DEMO_QUARTET: AppId[] = ["ingest", "pms", "comms", "board"];
 
 export type WindowAction =
   | { action: "open"; id: AppId }    // add one window (others unchanged) and focus it

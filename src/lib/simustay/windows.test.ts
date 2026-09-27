@@ -33,10 +33,10 @@ describe("window state machine", () => {
     assert.equal(s.focusedWindow, "comms");
   });
   it("closing keeps the window closed; focus never reopens it", () => {
-    let s = applyWindowAction(quartetOpen(), { action: "close", id: "phone" });
-    s = applyWindowAction(s, { action: "focus", id: "phone" });
-    assert.equal(s.openWindows.phone, false);
-    assert.notEqual(s.focusedWindow, "phone");
+    let s = applyWindowAction(quartetOpen(), { action: "close", id: "comms" });
+    s = applyWindowAction(s, { action: "focus", id: "comms" });
+    assert.equal(s.openWindows.comms, false);
+    assert.notEqual(s.focusedWindow, "comms");
   });
   it("closing the focused window clears focus", () => {
     const s = applyWindowAction(quartetOpen(), { action: "close", id: "pms" });

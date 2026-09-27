@@ -11,5 +11,5 @@ export const APP_IDS: AppId[] = ["ingest", "pms", "comms", "phone", "board", "ag
 
 export const SKIN_LABELS = {
   pms: { classic: "Opera-style · 4-window split", modern: "Modern cloud PMS" },
-  comms: { whatsapp: "WhatsApp-style", telegram: "Telegram-style" },
+  comms: { whatsapp: "WhatsApp-style", telegram: "Telegram-style", slack: "Slack-style · #guest-requests" },
 } as const;

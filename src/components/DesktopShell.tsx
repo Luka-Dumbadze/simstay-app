@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell, Bot, Building2, Check, ChevronDown, LayoutDashboard, LayoutGrid, Loader2, Minus, MonitorPlay, Moon, PanelLeft,
-  PanelLeftClose, Projector, RotateCcw, ShieldAlert, SkipForward, Sparkles, Wifi, WifiOff, X, type LucideIcon,
+  PanelLeftClose, Presentation, Projector, RotateCcw, ShieldAlert, SkipForward, Sparkles, Wifi, WifiOff, X, type LucideIcon,
 } from "lucide-react";
 import { act, clock, DEMO_PHOTO, sharedHotkeys, toast, upload, useNow, usePresenterHotkeys, useSimuStream, useToasts } from "@/lib/simustay/client";
-import { PROPERTIES, PROPERTY_IDS } from "@/lib/simustay/properties";
-import type { AppId, PropertyId, SimuState } from "@/lib/simustay/types";
+import { PMS_EDITIONS, PROPERTIES, PROPERTY_IDS } from "@/lib/simustay/properties";
+import { gateMove } from "@/lib/simustay/grader";
+import type { ActResult, AppId, PropertyId, SimuState, WindowNo } from "@/lib/simustay/types";
+import { MARKETPLACE, type MarketAppId } from "@/lib/simustay/marketplace";
 import { applyWindowAction, type WindowAction } from "@/lib/simustay/windows";
 import { APP_ORDER, APPS } from "./appRegistry";
 import AppLaunchpad from "./AppLaunchpad";
@@ -21,7 +23,8 @@ import BoardWindow from "./apps/BoardWindow";
 import PhoneWindow from "./apps/PhoneWindow";
 import AgentsWindow from "./apps/AgentsWindow";
 import OpsWindow from "./apps/OpsWindow";
-import StoreWindow from "./apps/StoreWindow";
+import AppStoreWindow, { MarketAppPanel } from "./apps/AppStoreWindow";
+import PitchStage, { type PitchControls } from "./pitch/PitchStage";
 
 interface Rect { x: number; y: number; w: number; h: number }
 // Geometry and stacking are per-viewer only.
@@ -37,7 +40,7 @@ function newClientId(): string {
     : `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 type Preset = "wide" | "compact";
-type View = "launchpad" | "workspace";
+type View = "launchpad" | "workspace" | "pitch";
 type Theme = "midnight" | "projector";
 
 const TOP = 64; // below the top nav
@@ -65,7 +68,8 @@ function computeLayout(preset: Preset, vw: number, vh: number, left: number): Re
     h: Math.min(h, ah),
   });
   return {
-    ingest: { x: x1, y: TOP, w: c1, h: ah },
+    // Front-desk quartet: Rule Studio above the guest chat on the left, folio centre, room board right.
+    ingest: { x: x1, y: TOP, w: c1, h: ah - commsH - GAP },
     comms: { x: x1, y: TOP + ah - commsH, w: c1, h: commsH },
     pms: { x: x2, y: TOP, w: c2, h: ah },
     board: { x: x3, y: TOP, w: c3, h: ah },
@@ -81,7 +85,9 @@ function initialWindows(preset: Preset, left: number): Record<AppId, Win> {
   return Object.fromEntries(APP_ORDER.map((id, i) => [id, { ...rects[id], z: i + 1 }])) as Record<AppId, Win>;
 }
 
-export default function DesktopShell() {
+const SESSION_KEY = "simstay_session_active";
+
+export default function DesktopShell({ urlReset = false }: { urlReset?: boolean }) {
   const state = useSimuStream();
   const [wins, setWins] = useState<Record<AppId, Win> | null>(null);
   const [view, setView] = useState<View>("launchpad");
@@ -91,6 +97,7 @@ export default function DesktopShell() {
   const [menu, setMenu] = useState<"presenter" | "notifications" | "property" | null>(null);
   const [inspector, setInspector] = useState<{ id: AgentId; top: number } | null>(null);
   const [autopilot, setAutopilot] = useState(false);
+  const [marketPanel, setMarketPanel] = useState<MarketAppId | null>(null);
   const zTop = useRef(20);
   const presetRef = useRef<Preset>("wide");
   const stateRef = useRef<SimuState | null>(null);
@@ -152,7 +159,9 @@ export default function DesktopShell() {
     try { localStorage.setItem("simustay.theme", theme); } catch { /* ignore */ }
   }, [theme]);
 
+  // Pitch mode is entered deliberately each time (it resets the story), so a reload never lands in it.
   useEffect(() => {
+    if (view === "pitch") return;
     try { localStorage.setItem("simustay.view", view); } catch { /* ignore */ }
   }, [view]);
 
@@ -265,7 +274,7 @@ export default function DesktopShell() {
     setMenu(null);
     setInspector(null);
     const out = await act("property", { propertyId: id });
-    if (out.ok) toast(`🏨 ${PROPERTIES[id].name}`, "ok");
+    if (out.ok) toast(`🏨 ${PROPERTIES[id].name} · ${PMS_EDITIONS[PROPERTIES[id].pmsSkin].label}`, "ok");
   }, []);
 
   // Another operator's focus change brings that window to the front here too.
@@ -287,31 +296,58 @@ export default function DesktopShell() {
     seenTasks.current = ids;
   }, [state, raise]);
 
+  // Autopilot: the whole front-desk shift, paced for an audience. Check-in → routing (with the wine mistake the
+  // coach stops) → check-out closes invoice #1 → a late restaurant check arrives → the trainee tries the closed
+  // company invoice (stopped by the closed-invoice rule) → posts it to the supplementary window → invoice #2 →
+  // housekeeping turns the villa around. Blocked moves hold longer so the coach banner can be read.
   const runAutopilot = useCallback(async () => {
     if (autoRef.current) { autoRef.current = false; setAutopilot(false); toast("ავტოპილოტი გაჩერდა · Autopilot stopped"); return; }
     autoRef.current = true;
     setAutopilot(true);
     liveWorkspaceRef.current();
-    toast("▶ ავტოპილოტი · Autopilot: scripted beats, 1.2 s apart", "info");
-    const wait = () => new Promise((r) => setTimeout(r, 1200));
-    const task = () => stateRef.current?.tasks.find((t) => t.kind === "departure" && t.state === "open");
-    const steps: (() => Promise<unknown>)[] = [
-      () => act("reset", { snapshot: "start" }),
-      () => upload("ingest", new FormData()),
-      () => act("publish"),
-      ...(stateRef.current?.property.demoScript ?? []).map((m) => () => act("folio/move", m)),
-      () => act("folio/finish"),
-      ...["bed", "bath", "minibar", "amenities", "floor"].map((itemId) => () => {
+    toast("▶ ავტოპილოტი · ჩასახლება → გასვლა → დაგვიანებული ხარჯი", "info");
+    let cur: SimuState | null = stateRef.current;
+    const pause = async (ms: number) => { for (let t = 0; t < ms && autoRef.current; t += 100) await new Promise((r) => setTimeout(r, 100)); };
+    // Runs one beat, remembers the newest state, then holds: longer when the coach has just blocked a move.
+    const beat = async (run: () => Promise<ActResult | void>, holdMs = 1600) => {
+      if (!autoRef.current) return false;
+      const out = await run();
+      if (out?.state) cur = out.state;
+      await pause(out?.gate && !out.gate.ok ? 3400 : holdMs);
+      return autoRef.current;
+    };
+    const task = () => cur?.tasks.find((t) => t.kind === "departure" && t.state === "open");
+    const lateCharge = () => cur?.folio.charges.find((c) => c.late && c.window === null) ?? null;
+
+    const script: [() => Promise<ActResult | void>, number?][] = [
+      [() => act("reset", { snapshot: "start" }), 900],
+      [() => upload("ingest", new FormData()), 1200],
+      [() => act("publish"), 2000], // check-in note and the guest's WhatsApp message
+      ...(stateRef.current?.property.demoScript ?? []).map((m) => [() => act("folio/move", m), 1400] as [() => Promise<ActResult>, number]),
+      [() => act("folio/finish"), 2600], // invoice #1 closed, villa to housekeeping
+      [() => act("folio/late-charge"), 2400],
+      // The instinctive mistake: the late charge onto the closed company invoice.
+      [async () => {
+        const c = lateCharge();
+        const company = cur?.folio.windows.find((w) => w.closed && w.payerType === "company");
+        return c && company ? act("folio/move", { chargeId: c.id, window: company.n }) : undefined;
+      }],
+      // The correction: the first window the rules accept (the supplementary window).
+      [async () => {
+        const c = lateCharge();
+        const fix = c && cur ? ([1, 2, 3, 4] as WindowNo[]).find((w) => gateMove(cur!.folio, cur!.rules, c.id, w).ok) : undefined;
+        return c && fix ? act("folio/move", { chargeId: c.id, window: fix }) : undefined;
+      }, 1600],
+      [async () => (cur?.folio.charges.some((c) => c.late) ? act("folio/finish") : undefined), 2400], // supplementary invoice
+      ...["bed", "bath", "minibar", "amenities", "floor"].map((itemId) => [() => {
         const t = task();
         return t ? act("hk/check", { taskId: t.id, itemId, done: true }) : Promise.resolve();
-      }),
-      () => { const t = task(); return t ? act("hk/complete", { taskId: t.id, photo: DEMO_PHOTO }) : Promise.resolve(); },
-      () => act("hk/inspect", { room: stateRef.current?.folio.room }),
+      }, 700] as [() => Promise<ActResult | void>, number]),
+      [() => { const t = task(); return t ? act("hk/complete", { taskId: t.id, photo: DEMO_PHOTO }) : Promise.resolve(); }, 1400],
+      [() => act("hk/inspect", { room: cur?.folio.room }), 800],
     ];
-    for (const step of steps) {
-      if (!autoRef.current) return;
-      await step();
-      await wait();
+    for (const [run, hold] of script) {
+      if (!(await beat(run, hold))) return;
     }
     autoRef.current = false;
     setAutopilot(false);
@@ -320,15 +356,61 @@ export default function DesktopShell() {
 
   const toggleView = useCallback(() => setView((v) => (v === "launchpad" ? "workspace" : "launchpad")), []);
 
+  // Clean slate: pristine start.json on the server (folio, chat, errors, property, add-ons, windows), any
+  // running autopilot stopped, and this screen back on the Launchpad. Other open browsers follow via the stream.
+  const resetDemo = useCallback(async (announce = true) => {
+    autoRef.current = false;
+    setAutopilot(false);
+    setMenu(null);
+    setInspector(null);
+    setMarketPanel(null);
+    setView("launchpad");
+    const out = await act("reset", { full: true });
+    if (out.ok && announce) toast("✓ დემო დაბრუნდა საწყის მდგომარეობაში", "ok");
+  }, []);
+
+  // A new session starts clean: a new tab or window, a restarted browser, or cleared site data all arrive
+  // with empty sessionStorage. Reloading the same tab keeps the session and the demo where it was.
+  // /?reset=true was already reset on the server before this page rendered; only the query is removed here.
+  useEffect(() => {
+    if (window.parent !== window) return; // an embedded page never resets the presenter's demo
+    let fresh = false;
+    try {
+      fresh = sessionStorage.getItem(SESSION_KEY) === null;
+      sessionStorage.setItem(SESSION_KEY, "true");
+    } catch { /* storage blocked: never auto-reset on every load */ }
+    if (urlReset) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("reset");
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+      setView("launchpad");
+      toast("✓ დემო დაბრუნდა საწყის მდგომარეობაში", "ok");
+      return;
+    }
+    if (fresh) void resetDemo(false);
+  }, [urlReset, resetDemo]);
+
+  // Pitch mode (Ctrl+Shift+P, Esc to leave): the 60-second story on its own stage; the workspace autopilot stops.
+  const pitchCtl = useRef<PitchControls | null>(null);
+  const togglePitch = useCallback(() => {
+    if (autoRef.current) { autoRef.current = false; setAutopilot(false); }
+    setMenu(null);
+    setInspector(null);
+    setView((v) => (v === "pitch" ? "launchpad" : "pitch"));
+  }, []);
+  const exitPitch = useCallback(() => setView("launchpad"), []);
+
   usePresenterHotkeys({
     ...sharedHotkeys(),
     "1": () => applyPreset("wide", left),
     "2": () => applyPreset("compact", left),
-    A: () => { void runAutopilot(); },
+    A: () => { if (view === "pitch") pitchCtl.current?.toggleAuto(); else void runAutopilot(); },
     L: toggleView,
+    P: togglePitch,
   });
 
   const installed = useMemo(() => (state ? APP_ORDER.filter((id) => state.workspace.installed_apps.includes(id)) : []), [state]);
+  const market = useMemo(() => (state ? MARKETPLACE.filter((m) => state.workspace.marketplace_apps?.includes(m.id)) : []), [state]);
   const openIds = useMemo(() => new Set(wm ? APP_ORDER.filter((id) => wm.open[id]) : []), [wm]);
 
   if (!state || !wins || !wm) {
@@ -348,13 +430,13 @@ export default function DesktopShell() {
       case "phone": return <PhoneWindow />;
       case "agents": return <AgentsWindow state={state} />;
       case "ops": return <OpsWindow state={state} />;
-      case "store": return <StoreWindow state={state} />;
+      case "store": return <AppStoreWindow state={state} />;
     }
   };
 
   return (
     <div className="os-wallpaper relative h-screen w-screen select-none overflow-hidden" data-view={view}>
-      <TopNav
+      {view !== "pitch" && <TopNav
         state={state}
         left={left}
         sidebar={sidebar}
@@ -370,9 +452,11 @@ export default function DesktopShell() {
         onPreset={(p) => applyPreset(p, left)}
         onLiveWorkspace={liveWorkspace}
         onProperty={(id) => void switchProperty(id)}
-      />
+        onPitch={togglePitch}
+        onResetDemo={() => void resetDemo()}
+      />}
 
-      {sidebar && (
+      {view !== "pitch" && sidebar && (
         <SidebarDock
           state={state}
           activeAgent={inspector?.id ?? null}
@@ -382,7 +466,7 @@ export default function DesktopShell() {
         />
       )}
 
-      {sidebar && inspector && (
+      {view !== "pitch" && sidebar && inspector && (
         <AgentInspectorDrawer
           agentId={inspector.id}
           state={state}
@@ -397,6 +481,7 @@ export default function DesktopShell() {
           state={state}
           left={left}
           onOpen={soloApp}
+          onOpenMarket={setMarketPanel}
           onStartDemo={liveWorkspace}
           onAutopilot={() => void runAutopilot()}
           autopilot={autopilot}
@@ -434,8 +519,17 @@ export default function DesktopShell() {
         </div>
       )}
 
-      <BottomDock installed={installed} openIds={openIds} focused={wm.focused} view={view} onLaunchpad={() => setView("launchpad")} onApp={dockClick} />
-      <Toasts />
+      {view === "pitch" && <PitchStage state={state} onExit={exitPitch} controlRef={pitchCtl} />}
+
+      {view !== "pitch" && (
+        <>
+          <BottomDock installed={installed} market={market} onMarket={setMarketPanel} openIds={openIds} focused={wm.focused} view={view === "workspace" ? "workspace" : "launchpad"} onLaunchpad={() => setView("launchpad")} onApp={dockClick} />
+          <Toasts />
+        </>
+      )}
+      {view !== "pitch" && marketPanel && market.some((m) => m.id === marketPanel) && (
+        <MarketAppPanel id={marketPanel} onClose={() => setMarketPanel(null)} onOpenApp={launchApp} />
+      )}
     </div>
   );
 }
@@ -446,8 +540,13 @@ interface NotificationItem { t: number; icon: LucideIcon; tone: string; text: st
 
 function notifications(s: SimuState): NotificationItem[] {
   const items: NotificationItem[] = [
-    ...s.gateLog.filter((g) => !g.ok).map((g) => ({ t: g.at, icon: ShieldAlert, tone: "text-rose-400", text: `${g.ruleId}: ${g.message_ka}` })),
-    ...s.adapterLog.filter((l) => l.line.startsWith("PATCH")).map((l) => ({ t: l.t, icon: Sparkles, tone: "text-emerald-400", text: l.line })),
+    ...s.gateLog.filter((g) => !g.ok).map((g) => ({ t: g.at, icon: ShieldAlert, tone: "text-rose-400", text: `სასტუმროს წესდება: ${g.message_ka}` })),
+    // Plain-language room updates, never raw integration calls.
+    ...s.adapterLog.filter((l) => l.line.startsWith("PATCH")).map((l) => {
+      const room = /"Id":"([^"]+)"/.exec(l.line)?.[1] ?? "?";
+      const status = /"State":"([^"]+)"/.exec(l.line)?.[1] ?? "updated";
+      return { t: l.t, icon: Sparkles, tone: "text-emerald-400", text: `PMS · ${room} → ${status}` };
+    }),
   ];
   return items.sort((a, b) => b.t - a.t).slice(0, 8);
 }
@@ -468,6 +567,8 @@ function TopNav(props: {
   onPreset: (p: Preset) => void;
   onLiveWorkspace: () => void;
   onProperty: (id: PropertyId) => void;
+  onPitch: () => void;
+  onResetDemo: () => void;
 }) {
   const { state, menu, setMenu } = props;
   const now = useNow();
@@ -499,12 +600,30 @@ function TopNav(props: {
       </div>
 
       <button
+        onClick={props.onResetDemo}
+        data-testid="reset-demo"
+        title="დემოს თავიდან დაწყება: საწყისი მდგომარეობა · Reset the demo to its clean start"
+        className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/20 px-2.5 py-1 text-[12px] font-medium text-os-ink hover:bg-white/10"
+      >
+        <RotateCcw className="h-3.5 w-3.5" /> თავიდან დაწყება
+      </button>
+
+      <button
         onClick={props.onLiveWorkspace}
         data-testid="live-workspace"
-        title="Demo layout: Rule Studio, folio, board, phone"
+        title="Front-desk layout: Rule Studio, guest chat, folio, room board"
         className="flex items-center gap-1.5 rounded-xl bg-white px-2.5 py-1 text-[12px] font-semibold text-[#0B0C0E] hover:bg-white/90"
       >
         <MonitorPlay className="h-3.5 w-3.5" /> Live workspace
+      </button>
+
+      <button
+        onClick={props.onPitch}
+        data-testid="pitch-mode"
+        title="Pitch mode: the 60-second story (Ctrl+Shift+P, Esc to leave)"
+        className="flex items-center gap-1.5 rounded-xl bg-emerald-500 px-2.5 py-1 text-[12px] font-semibold text-[#0B0C0E] hover:bg-emerald-400"
+      >
+        <Presentation className="h-3.5 w-3.5" /> Pitch
       </button>
 
       <div className="absolute left-1/2 hidden -translate-x-1/2 lg:block">
@@ -537,7 +656,7 @@ function TopNav(props: {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[14px] font-medium text-os-ink">{p.name}</span>
-                      <span className="block text-[12px] text-os-mute">{p.rules.length} rules · {p.document.fileName}</span>
+                      <span className="block text-[12px] text-os-mute">{PMS_EDITIONS[p.pmsSkin].label} · {p.rules.length} rules</span>
                     </span>
                     {active && <Check className="h-4 w-4 text-emerald-400" />}
                   </button>
@@ -607,6 +726,7 @@ function TopNav(props: {
               <MenuItem icon={RotateCcw} k="R" label="სრული გადატვირთვა · Full reset" onClick={() => sharedHotkeys().R?.()} />
               <MenuItem icon={SkipForward} k="B" label="გასვლამდე · Jump to check-out" onClick={() => sharedHotkeys().B?.()} />
               <MenuItem icon={offline ? Wifi : WifiOff} k="O" label="ონლაინ/ოფლაინ · Toggle mode" onClick={() => sharedHotkeys().O?.()} />
+              <MenuItem icon={Presentation} k="P" label="Pitch mode · 60-second story" onClick={props.onPitch} />
               <MenuItem icon={LayoutDashboard} k="L" label="Launchpad ↔ Workspace" onClick={() => props.setView(props.view === "launchpad" ? "workspace" : "launchpad")} />
               <MenuItem icon={LayoutGrid} k="1" label="განლაგება 1920×1080" onClick={() => props.onPreset("wide")} />
               <MenuItem icon={LayoutGrid} k="2" label="განლაგება 1366×768" onClick={() => props.onPreset("compact")} />

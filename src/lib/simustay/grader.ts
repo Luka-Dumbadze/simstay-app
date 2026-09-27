@@ -14,6 +14,7 @@ const fail = (r: Rule): GateResult => ({
 
 // Structural checks explain an empty or misconfigured window better than a routing rule would.
 const PRIORITY: Record<RuleCheck["kind"], number> = {
+  closed_invoice: -1, // an edit to an issued invoice is the most serious explanation, so it is checked first
   window_requires_payee: 0,
   route: 1,
   direct_bill_requires_letter: 2,
@@ -30,6 +31,14 @@ export function gradedRules(rules: Rule[]): Rule[] {
 export function gateMove(folio: Folio, rules: Rule[], chargeId: string, target: WindowNo | null): GateResult {
   const charge = folio.charges.find((c) => c.id === chargeId);
   if (!charge) return { ok: false, ruleId: "SYS", tier: "H", message_ka: "უცნობი ხარჯი", message_en: "Unknown charge" };
+  // Moving a charge into or out of an issued invoice changes that invoice. Re-grading a charge where it
+  // already sits (target === its window) is not an edit, so a closed folio still passes gateFinish.
+  const closedRule = gradedRules(rules).find((r) => r.check!.kind === "closed_invoice");
+  if (closedRule && target !== charge.window) {
+    const from = folio.windows.find((w) => w.n === charge.window);
+    const to = target === null ? null : folio.windows.find((w) => w.n === target);
+    if (from?.closed || to?.closed) return fail(closedRule);
+  }
   if (target === null) return OK; // un-routing a charge never posts anything
   const win = folio.windows.find((w) => w.n === target);
   if (!win) return { ok: false, ruleId: "SYS", tier: "H", message_ka: "უცნობი ფანჯარა", message_en: "Unknown window" };
@@ -92,6 +101,11 @@ export function gateFinish(folio: Folio, rules: Rule[]): GateResult {
   return { ok: true, ruleId: "BAL", tier: "H", message_ka: "ფოლიო დაბალანსებულია", message_en: "Folio balanced" };
 }
 
+// True between a late charge's arrival and its supplementary invoice: the folio accepts moves again.
+export function lateChargesOpen(folio: Folio): boolean {
+  return folio.charges.some((c) => c.late) && !(folio.invoices ?? []).some((i) => i.kind === "supplementary");
+}
+
 // Which graded rules the current folio already satisfies (drives the ✓ list in the grader HUD).
 export function satisfiedRules(folio: Folio, rules: Rule[]): string[] {
   const out: string[] = [];
@@ -104,6 +118,10 @@ export function satisfiedRules(folio: Folio, rules: Rule[]): string[] {
     } else if (check.kind === "window_requires_payee") {
       const used = new Set(folio.charges.map((c) => c.window).filter((w): w is WindowNo => w !== null));
       if (used.size > 0 && [...used].every((n) => { const w = folio.windows.find((x) => x.n === n); return !!w?.payee && !!w?.method; })) out.push(r.id);
+    } else if (check.kind === "closed_invoice") {
+      const late = folio.charges.filter((c) => c.late);
+      const primary = (folio.invoices ?? []).find((i) => i.kind === "primary")?.windows ?? [];
+      if (late.length && late.every((c) => c.window !== null && !primary.includes(c.window))) out.push(r.id);
     } else if (check.kind === "direct_bill_requires_letter") {
       const billed = folio.charges.some((c) => folio.windows.find((w) => w.n === c.window)?.method === "direct_bill");
       if (billed && folio.letterOnFile) out.push(r.id);

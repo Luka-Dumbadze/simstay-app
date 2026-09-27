@@ -3,6 +3,7 @@ import {
   Blocks, BotMessageSquare, ConciergeBell, FileSearch, LayoutGrid, MessageCircle, Smartphone, Workflow, type LucideIcon,
 } from "lucide-react";
 import { folioTotals } from "@/lib/simustay/grader";
+import { SKIN_LABELS } from "@/lib/simustay/profiles";
 import type { AppId, SimuState } from "@/lib/simustay/types";
 
 export interface AppMeta {
@@ -55,13 +56,13 @@ export const APPS: Record<AppId, AppMeta> = {
     id: "comms",
     name: "Comms Hub",
     name_ka: "სტუმართან მიმოწერა",
-    blurb: () => "WhatsApp- or Telegram-style guest chat with button-first quick replies in Georgian.",
+    blurb: () => "WhatsApp-, Telegram- or Slack-style guest chat with button-first quick replies in Georgian.",
     icon: MessageCircle,
     badge: "#F4F4F5",
     glyph: "#18191E",
     min: { w: 320, h: 320 },
-    title: (s) => `სტუმარი · ${s.workspace.skins.comms === "whatsapp" ? "WhatsApp-style" : "Telegram-style"}`,
-    stat: (s) => `${s.workspace.skins.comms === "whatsapp" ? "WhatsApp" : "Telegram"}-style · ${s.chat.filter((m) => m.from !== "system").length} messages`,
+    title: (s) => `სტუმარი · ${SKIN_LABELS.comms[s.workspace.skins.comms]}`,
+    stat: (s) => `${SKIN_LABELS.comms[s.workspace.skins.comms].split(" ·")[0]} · ${s.chat.filter((m) => m.from !== "system").length} messages`,
     tags: ["Guest", "ka / en"],
   },
   phone: {
@@ -81,12 +82,12 @@ export const APPS: Record<AppId, AppMeta> = {
     id: "board",
     name: "Live PMS Board",
     name_ka: "ოთახების დაფა",
-    blurb: (s) => `${s.property.short}: ${s.rooms.length} units, live status grid with the adapter log and impact HUD.`,
+    blurb: (s) => `${s.property.short}: ${s.rooms.length} units, live room-status grid and impact HUD.`,
     icon: LayoutGrid,
     badge: "#22C55E",
     glyph: "#04210F",
     min: { w: 420, h: 360 },
-    title: (s) => `Live PMS Board · ${s.property.short} (Mock PMS)`,
+    title: (s) => `Live PMS Board · ${s.property.short} · ოთახების სტატუსი`,
     stat: (s) => `${s.rooms.length} units · ${s.rooms.filter((r) => r.status === "inspected").length} sellable · ${s.rooms.filter((r) => r.status === "dirty").length} dirty`,
     tags: ["Mews-shaped", "Impact HUD"],
   },
@@ -180,7 +181,7 @@ export function agentRoster(s: SimuState): Agent[] {
       presence: s.published ? "grading" : "idle",
       engine: "Deterministic TypeScript rule engine · no LLM in the grading path",
       status: `${s.rules.filter((r) => r.tier !== "D").length} graded rules · ${s.metrics.movesGraded} moves graded · ${s.metrics.errorsCaught} caught`,
-      lastAction: lastGate ? `${lastGate.ok ? "✓" : "✗"} ${lastGate.ruleId === "OK" ? "move accepted" : `${lastGate.ruleId}: ${lastGate.message_ka}`}` : "—",
+      lastAction: lastGate ? `${lastGate.ok ? "✓" : "✗"} ${lastGate.ruleId === "OK" ? "move accepted" : lastGate.message_ka}` : "—",
     },
     {
       id: "extractor",

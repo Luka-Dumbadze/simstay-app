@@ -1,6 +1,7 @@
 "use client";
 
 import { LayoutDashboard } from "lucide-react";
+import type { MarketApp, MarketAppId } from "@/lib/simustay/marketplace";
 import { APPS } from "./appRegistry";
 import type { AppId } from "@/lib/simustay/types";
 
@@ -8,11 +9,13 @@ import type { AppId } from "@/lib/simustay/types";
 // (solo launch from the Launchpad; open / focus / minimise inside the workspace) and never opens the demo layout.
 export default function BottomDock(props: {
   installed: AppId[];
+  market: MarketApp[]; // installed marketplace add-ons, after a divider
   openIds: Set<AppId>;
   focused: AppId | null;
   view: "launchpad" | "workspace";
   onLaunchpad: () => void;
   onApp: (id: AppId) => void;
+  onMarket: (id: MarketAppId) => void;
 }) {
   return (
     <nav
@@ -41,6 +44,17 @@ export default function BottomDock(props: {
               <Icon className="h-5 w-5" style={{ color: app.glyph }} />
             </span>
             <span className={`absolute -bottom-2 h-1 w-1 rounded-full ${active ? "bg-os-ink" : "bg-transparent"}`} />
+          </button>
+        );
+      })}
+      {props.market.length > 0 && <span className="h-7 w-px bg-white/10" />}
+      {props.market.map((m) => {
+        const Icon = m.icon;
+        return (
+          <button key={m.id} data-testid={`dock-${m.id}`} onClick={() => props.onMarket(m.id)} title={m.name} aria-label={`Open ${m.name}`} className="group relative flex flex-col items-center">
+            <span className="grid h-11 w-11 animate-pop place-items-center rounded-full transition group-hover:-translate-y-1" style={{ background: m.badge }}>
+              <Icon className="h-5 w-5" style={{ color: m.glyph }} />
+            </span>
           </button>
         );
       })}

@@ -3,7 +3,10 @@
     "fileName": "ambassadori_kachreti_sops.pdf",
     "title_ka": "ამბასადორი კაჭრეთი — სტანდარტული საოპერაციო პროცედურები",
     "pages": 3,
-    "languages": ["ka", "en"]
+    "languages": [
+      "ka",
+      "en"
+    ]
   },
   "rules": [
     {
@@ -11,55 +14,116 @@
       "tier": "H",
       "title_ka": "ვილა და გოლფი — კომპანიის ანგარიშზე (კორპორატიული ხელშეკრულება)",
       "title_en": "Villa and golf go to the company (corporate agreement)",
-      "source": { "page": 1, "quote": "კორპორატიული ჯგუფებისთვის ვილა და გოლფის მოედნის საფასური ეკისრება კომპანიას" },
-      "check": { "kind": "route", "chargeCodes": ["VILLA", "GOLF"], "payer": "company" }
+      "source": {
+        "page": 1,
+        "quote": "კორპორატიული ჯგუფებისთვის ვილა და გოლფის მოედნის საფასური ეკისრება კომპანიას"
+      },
+      "check": {
+        "kind": "route",
+        "chargeCodes": [
+          "VILLA",
+          "GOLF"
+        ],
+        "payer": "company"
+      }
     },
     {
       "id": "H2",
       "tier": "H",
       "title_ka": "ღვინის დეგუსტაცია რჩება სტუმრის პირად ანგარიშზე",
       "title_en": "Wine tasting stays on the guest's personal account",
-      "source": { "page": 2, "quote": "ღვინის დეგუსტაცია რჩება სტუმრის პირად ანგარიშზე" },
-      "check": { "kind": "route", "chargeCodes": ["WINE"], "payer": "guest" }
+      "source": {
+        "page": 2,
+        "quote": "ღვინის დეგუსტაცია რჩება სტუმრის პირად ანგარიშზე"
+      },
+      "check": {
+        "kind": "route",
+        "chargeCodes": [
+          "WINE"
+        ],
+        "payer": "guest"
+      }
     },
     {
       "id": "H3",
       "tier": "H",
       "title_ka": "რესტორნის ხარჯი რჩება სტუმრის პირად ანგარიშზე",
       "title_en": "Restaurant charges stay on the guest's personal account",
-      "source": { "page": 2, "quote": "რესტორნის ხარჯებს სტუმარი იხდის პირადი ბარათით" },
-      "check": { "kind": "route", "chargeCodes": ["REST"], "payer": "guest" }
+      "source": {
+        "page": 2,
+        "quote": "რესტორნის ხარჯებს სტუმარი იხდის პირადი ბარათით"
+      },
+      "check": {
+        "kind": "route",
+        "chargeCodes": [
+          "REST",
+          "LATE_REST"
+        ],
+        "payer": "guest"
+      }
     },
     {
       "id": "H4",
       "tier": "H",
       "title_ka": "ყოველ ფანჯარას სჭირდება გადამხდელი და გადახდის მეთოდი",
       "title_en": "Every folio window needs a payee and a payment method",
-      "source": { "page": 1, "quote": "ფოლიოს ყოველ ფანჯარას უნდა ჰქონდეს გადამხდელი და გადახდის მეთოდი" },
-      "check": { "kind": "window_requires_payee" }
+      "source": {
+        "page": 1,
+        "quote": "ფოლიოს ყოველ ფანჯარას უნდა ჰქონდეს გადამხდელი და გადახდის მეთოდი"
+      },
+      "check": {
+        "kind": "window_requires_payee"
+      }
+    },
+    {
+      "id": "H5",
+      "tier": "H",
+      "title_ka": "დახურულ ინვოისზე ხარჯის პირდაპირი ჩამატება აკრძალულია. დაგვიანებული ხარჯი უნდა გატარდეს დამატებით ფოლიოში (Window 3).",
+      "title_en": "A closed invoice is never edited: a late charge goes to a supplementary folio (Window 3).",
+      "source": {
+        "page": 3,
+        "quote": "დახურულ ინვოისზე ხარჯის პირდაპირი ჩამატება აკრძალულია"
+      },
+      "check": {
+        "kind": "closed_invoice"
+      }
     },
     {
       "id": "P1",
       "tier": "P",
       "title_ka": "კომპანიის ანგარიშზე გადატანა — მხოლოდ კომპანიის წერილით ან ელფოსტით",
       "title_en": "Direct bill only with a company letter or email",
-      "source": { "page": 1, "quote": "საჭიროა კომპანიის წერილი ან ელფოსტა" },
-      "check": { "kind": "direct_bill_requires_letter" }
+      "source": {
+        "page": 1,
+        "quote": "საჭიროა კომპანიის წერილი ან ელფოსტა"
+      },
+      "check": {
+        "kind": "direct_bill_requires_letter"
+      }
     },
     {
       "id": "P2",
       "tier": "P",
       "title_ka": "ვილა იყიდება მხოლოდ შემოწმების შემდეგ",
       "title_en": "A villa is sellable only after inspection",
-      "source": { "page": 3, "quote": "ვილა გაიყიდება მხოლოდ ზედამხედველის შემოწმების შემდეგ" },
-      "check": { "kind": "sell_requires", "status": "inspected" }
+      "source": {
+        "page": 3,
+        "quote": "ვილა გაიყიდება მხოლოდ ზედამხედველის შემოწმების შემდეგ"
+      },
+      "check": {
+        "kind": "sell_requires",
+        "status": "inspected"
+      }
     },
     {
       "id": "D1",
       "tier": "D",
       "title_ka": "გვიანი გასვლა 14:00-მდე VIP სტუმრებისთვის — მენეჯერის შეხედულებით",
       "title_en": "Late checkout until 14:00 for VIPs, at the manager's discretion",
-      "source": { "page": 3, "quote": "მენეჯერის შეხედულებით" }
+      "source": {
+        "page": 3,
+        "quote": "მენეჯერის შეხედულებით"
+      }
     }
   ]
 }

@@ -127,7 +127,7 @@ export function useToasts(): Toast[] {
 
 export type HotkeyMap = Partial<Record<string, () => void>>;
 
-const PRESENTER_KEYS = new Set(["R", "B", "O", "L", "A", "1", "2"]);
+const PRESENTER_KEYS = new Set(["R", "B", "O", "L", "A", "P", "1", "2"]);
 const HOTKEY_MESSAGE = "simstay-hotkey";
 
 // When a page runs embedded (the phone iframe inside the desktop), key presses land in the iframe and never

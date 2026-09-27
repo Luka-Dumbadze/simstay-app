@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Activity, Clock3, FileSpreadsheet, Loader2, PlugZap, ShieldAlert, Timer, UserCheck } from "lucide-react";
-import { act, clock, duration, toast, unitName, useNow } from "@/lib/simustay/client";
+import { useState } from "react";
+import { BedDouble, Clock3, FileSpreadsheet, Loader2, ShieldAlert, Timer, UserCheck } from "lucide-react";
+import { act, duration, toast, unitName, useNow } from "@/lib/simustay/client";
 import type { Room, RoomStatus, SimuState } from "@/lib/simustay/types";
 
 export const STATUS_META: Record<RoomStatus, { color: string; code: string; ka: string }> = {
@@ -20,13 +20,8 @@ const MIN_PER_INTERVENTION = 6;
 export default function BoardWindow({ state }: { state: SimuState }) {
   const now = useNow(500);
   const [importing, setImporting] = useState(false);
-  const logRef = useRef<HTMLDivElement>(null);
   const m = state.metrics;
   const focusRoom = state.folio.room;
-
-  useEffect(() => {
-    logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
-  }, [state.adapterLog.length]);
 
   const ready = m.checkoutAt ? (m.readyAt ? duration(m.readyAt - m.checkoutAt) : duration(now - m.checkoutAt)) : "—";
   const counts = state.rooms.reduce((acc, r) => ({ ...acc, [r.status]: (acc[r.status] ?? 0) + 1 }), {} as Partial<Record<RoomStatus, number>>);
@@ -40,10 +35,20 @@ export default function BoardWindow({ state }: { state: SimuState }) {
 
   return (
     <div className="flex h-full flex-col bg-os-panel text-[14px]">
-      <div className="flex shrink-0 items-center gap-2 border-b border-white/5 px-3 py-1.5 text-[12px] text-slate-400">
-        <PlugZap className="h-3.5 w-3.5 text-amber-400" />
-        <span>Adapter: <b className="text-slate-200">Mews-shaped</b> (dry-run) · Mock PMS</span>
-        <span className="ml-auto">{state.property.units_ka} · გასაყიდი {counts.inspected ?? 0}</span>
+      {/* Business view: room status and impact only. Integration traffic stays in the PMS adapter, not on stage. */}
+      <div className="flex shrink-0 items-center gap-2 whitespace-nowrap border-b border-white/5 px-3 py-1.5 text-[13px] text-slate-300">
+        <BedDouble className="h-4 w-4 shrink-0 text-emerald-400" />
+        <span className="font-semibold text-slate-100">ოთახების სტატუსი</span>
+        <span className="truncate text-slate-400" title={state.property.units_ka}>· {state.rooms.length} ერთეული · გასაყიდი {counts.inspected ?? 0}</span>
+        <button
+          onClick={() => void importCsv()}
+          disabled={importing}
+          title="Import the PMS daily export (room,status CSV)"
+          className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[12px] text-slate-200 hover:bg-white/20 disabled:opacity-50"
+        >
+          {importing ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileSpreadsheet className="h-3 w-3" />}
+          CSV იმპორტი
+        </button>
       </div>
 
       {/* Impact HUD */}
@@ -60,26 +65,6 @@ export default function BoardWindow({ state }: { state: SimuState }) {
         />
       </div>
 
-      <div className="shrink-0 border-b border-white/5">
-        <div className="flex items-center gap-2 px-3 pt-1.5 text-[12px] font-semibold text-slate-400">
-          <Activity className="h-3.5 w-3.5" /> Adapter log
-          <button
-            onClick={() => void importCsv()}
-            disabled={importing}
-            className="ml-auto flex items-center gap-1.5 rounded bg-white/10 px-2 py-0.5 font-normal text-slate-200 hover:bg-white/20 disabled:opacity-50"
-          >
-            {importing ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileSpreadsheet className="h-3 w-3" />}
-            PMS ექსპორტის იმპორტი (CSV)
-          </button>
-        </div>
-        <div ref={logRef} data-testid="adapter-log" className="scroll-thin h-[92px] overflow-y-auto px-3 py-1 font-mono text-[12px] leading-relaxed">
-          {state.adapterLog.map((l, i) => (
-            <div key={`${l.t}-${i}`} className={`${l.line.startsWith("PATCH") ? "text-emerald-300" : "text-slate-400"} ${i === state.adapterLog.length - 1 ? "animate-slide-up" : ""}`}>
-              <span className="text-slate-500" suppressHydrationWarning>{clock(l.t)}</span> {l.line}
-            </div>
-          ))}
-        </div>
-      </div>
       <div className="scroll-thin min-h-0 flex-1 overflow-y-auto p-3">
         <div className={`grid gap-1.5 ${state.rooms.length > 24 ? "grid-cols-10" : "grid-cols-6"}`}>
           {state.rooms.map((r) => <RoomCell key={`${r.number}-${r.status}`} room={r} focus={r.number === focusRoom} now={now} />)}

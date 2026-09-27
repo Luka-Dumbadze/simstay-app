@@ -4,7 +4,7 @@ export type Tier = "H" | "P" | "D"; // Hard invariant | signed Policy | Discreti
 export type RoomStatus = "occupied" | "dirty" | "clean" | "inspected" | "ooo" | "oos";
 export type WindowNo = 1 | 2 | 3 | 4;
 export type ChargeCode =
-  | "VILLA" | "GOLF" | "WINE" | "REST" // Ambassadori Kachreti
+  | "VILLA" | "GOLF" | "WINE" | "REST" | "LATE_REST" // Ambassadori Kachreti (LATE_REST: arrives after check-out)
   | "COTTAGE" | "HALO" | "SPECTRO" | "PHYTO" | "BAR"; // Bioli Wellness
 export type PayerType = "guest" | "company" | "package";
 export type PropertyId = "ambassadori" | "bioli";
@@ -18,6 +18,7 @@ export type RuleCheck =
   | { kind: "route"; chargeCodes: ChargeCode[]; payer: PayerType }
   | { kind: "window_requires_payee" }
   | { kind: "direct_bill_requires_letter" }
+  | { kind: "closed_invoice" } // a closed invoice window is never edited; late charges go to a supplementary window
   | { kind: "balanced" }
   | { kind: "sell_requires"; status: "inspected" };
 
@@ -37,6 +38,7 @@ export interface Charge {
   label_en: string;
   amount: number;
   window: WindowNo | null;
+  late?: boolean; // posted after check-out: belongs on a supplementary invoice
 }
 
 export interface FolioWindow {
@@ -44,6 +46,24 @@ export interface FolioWindow {
   payee: string | null;
   payerType: PayerType | null;
   method: "card" | "direct_bill" | "prepaid" | null;
+  closed?: boolean; // invoiced at check-out: read-only from then on
+  invoiceNo?: string;
+}
+
+export interface Invoice {
+  no: string;
+  kind: "primary" | "supplementary";
+  windows: WindowNo[];
+  total: number;
+  at: number;
+}
+
+// Optional post-check-out beat of a scenario: a late charge and the supplementary window it belongs in.
+export interface LateChargeSpec {
+  charge: Omit<Charge, "window" | "late">;
+  window: FolioWindow;
+  message_ka: string;
+  message_en: string;
 }
 
 export interface Folio {
@@ -58,6 +78,7 @@ export interface Folio {
   letterOnFile: boolean;
   windows: FolioWindow[];
   charges: Charge[];
+  invoices?: Invoice[];
 }
 
 export interface Room {
@@ -137,7 +158,7 @@ export interface IngestInfo {
 
 export type AppId = "ingest" | "pms" | "comms" | "phone" | "board" | "agents" | "ops" | "store";
 export type PmsSkin = "classic" | "modern";
-export type CommsSkin = "whatsapp" | "telegram";
+export type CommsSkin = "whatsapp" | "telegram" | "slack"; // slack: only while the Slack Workspace Hub add-on is installed
 
 export interface WorkspaceProfile {
   id: string;
@@ -150,6 +171,7 @@ export interface WorkspaceProfile {
 export interface Workspace {
   profileId: string;
   installed_apps: AppId[];
+  marketplace_apps?: string[]; // installed App Store add-ons (lib/simustay/marketplace.ts); absent = none
   skins: { pms: PmsSkin; comms: CommsSkin };
 }
 

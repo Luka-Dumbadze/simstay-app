@@ -45,8 +45,8 @@
     ],
     "csvSample": "room,status\n105,inspected\n209,clean\n307,clean\n406,inspected\n"
   },
-  "shiftTitle_ka": "ცვლა: გასვლა · ვილა 304 (კაჭრეთის კუნძული) · სტაჟიორი: ანა",
-  "shiftTitle_en": "Shift: Check-out · Villa 304 (Kachreti Island) · Trainee: Ana",
+  "shiftTitle_ka": "ცვლა: ჩასახლება → გასვლა → დაგვიანებული ხარჯი · ვილა 304 (კაჭრეთის კუნძული) · სტაჟიორი: ანა",
+  "shiftTitle_en": "Shift: Check-in → Check-out → Late charge · Villa 304 (Kachreti Island) · Trainee: Ana",
   "folio": {
     "reservationId": "AK-2291",
     "room": "304",
@@ -120,6 +120,11 @@
   },
   "opening": [
     {
+      "from": "system",
+      "text_ka": "🛎 ჩასახლება: ირაკლი კაპანაძე · ვილა 304 · კორპორატიული ჯავშანი AK-2291 (საქართველოს ბანკი)",
+      "text_en": "Check-in: Irakli Kapanadze · Villa 304 · corporate booking AK-2291 (Bank of Georgia)"
+    },
+    {
       "from": "guest",
       "text_ka": "გამარჯობა, ირაკლი კაპანაძე ვარ, საქართველოს ბანკის კორპორატიული რიტრიტიდან. ვილისა და გოლფის საფასურს ბანკი იხდის.",
       "text_en": "Hello, I'm Irakli Kapanadze from the Bank of Georgia corporate retreat. The bank pays for the villa and golf."
@@ -175,5 +180,26 @@
       "label_ka": "ტერასა და იატაკი",
       "label_en": "Terrace & floor"
     }
-  ]
+  ],
+  "invoices": {
+    "primary": "INV-1042",
+    "supplementary": "INV-1043"
+  },
+  "lateCharge": {
+    "charge": {
+      "id": "c-late-rest",
+      "code": "LATE_REST",
+      "label_ka": "რესტორანი „ქალაქი“ — დაგვიანებული ჩეკი",
+      "label_en": "Restaurant Qalaqi · late check",
+      "amount": 80
+    },
+    "window": {
+      "n": 3,
+      "payee": "ირაკლი კაპანაძე · დამატებითი ინვოისი",
+      "payerType": "guest",
+      "method": "card"
+    },
+    "message_ka": "🍽 რესტორანი „ქალაქი“: გასვლის შემდეგ მოვიდა დაგვიანებული ჩეკი · 80 ₾",
+    "message_en": "Restaurant Qalaqi: a late 80 GEL check arrived after check-out"
+  }
 }
